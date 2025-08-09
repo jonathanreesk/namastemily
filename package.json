@@ -9,5 +9,8 @@
   "dependencies": {
     "openai": "^4.55.3",
     "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
   }
 }
