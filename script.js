@@ -52,6 +52,22 @@ function transliterateHindi(text) {
   return result;
 }
 
+// Normalize common Hinglish to Devanagari
+function normalizeHinglishToDev(text) {
+  return text
+    .replace(/\bmain\b/gi, 'मैं')
+    .replace(/\bmein\b/gi, 'में')
+    .replace(/\bnahi\b/gi, 'नहीं')
+    .replace(/\byahan\b/gi, 'यहाँ')
+    .replace(/\bwahan\b/gi, 'वहाँ')
+    .replace(/\bthoda\b/gi, 'थोड़ा')
+    .replace(/\bzyada\b/gi, 'ज़्यादा')
+    .replace(/\bkripya\b/gi, 'कृपया')
+    .replace(/\bdhanyavaad\b/gi, 'धन्यवाद')
+    .replace(/\bchahiye\b/gi, 'चाहिए')
+    .replace(/\bkiraya\b/gi, 'किराया');
+}
+
 const chat = document.getElementById("chat");
 const input = document.getElementById("input");
 const sendBtn = document.getElementById("sendBtn");
