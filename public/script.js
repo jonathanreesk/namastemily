@@ -448,7 +448,7 @@ function renderPhrases() {
       // Auto-respond from Asha with the lesson
       setTimeout(() => {
         addMsg("assistant", lessonMessage);
-        speak(lessonMessage);
+        setTimeout(() => speak(lessonMessage), 300);
       }, 500);
       
       // Also put the pronunciation in the input for practice
@@ -509,13 +509,8 @@ sceneSel.addEventListener("change", () => {
         });
         
         if (resp.ok) {
-          const data = await resp.json();
-          addMsg("assistant", data.reply);
-        }
-      } catch (e) {
-        console.error('Scene change error:', e);
-        addMsg("assistant", `Perfect! Let's practice ${s} situations. I'll teach you useful Hindi phrases for this scene step by step! 🌟`);
-      }
+    setTimeout(() => {
+      speak(reply);
     }, 500);
   }
 });
