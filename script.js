@@ -54,20 +54,41 @@ function speak(text) {
   
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "hi-IN";
-  u.rate = 0.7;
-  u.pitch = 1.1;
+  u.rate = 0.6; // Slower for better pronunciation
+  u.pitch = 1.0; // More natural pitch
   u.volume = 0.9;
   
-  // Try to find a Hindi voice
+  // Try to find the best Hindi voice available
   const voices = window.speechSynthesis.getVoices();
-  const hindiVoice = voices.find(voice => 
-    voice.lang.includes('hi') || 
-    voice.name.toLowerCase().includes('hindi') ||
-    voice.name.toLowerCase().includes('india')
-  );
   
-  if (hindiVoice) {
-    u.voice = hindiVoice;
+  // Priority order for Hindi voices (best to fallback)
+  const hindiVoicePreferences = [
+    // Google voices (usually best quality)
+    voice => voice.name.toLowerCase().includes('google') && voice.lang.includes('hi'),
+    // Native Hindi voices
+    voice => voice.lang === 'hi-IN' && voice.localService,
+    voice => voice.lang === 'hi-IN',
+    // Any Hindi voice
+    voice => voice.lang.includes('hi'),
+    // Indian English as fallback for better accent
+    voice => voice.lang === 'en-IN',
+    // Names that suggest Hindi/Indian voices
+    voice => voice.name.toLowerCase().includes('hindi'),
+    voice => voice.name.toLowerCase().includes('india'),
+    voice => voice.name.toLowerCase().includes('ravi') || voice.name.toLowerCase().includes('aditi'),
+  ];
+  
+  let selectedVoice = null;
+  for (const preference of hindiVoicePreferences) {
+    selectedVoice = voices.find(preference);
+    if (selectedVoice) break;
+  }
+  
+  if (selectedVoice) {
+    u.voice = selectedVoice;
+    console.log('Using voice:', selectedVoice.name, selectedVoice.lang);
+  } else {
+    console.log('No Hindi voice found, using default');
   }
   
   // Add error handling for mobile
@@ -77,7 +98,8 @@ function speak(text) {
   };
 
   u.onstart = () => {
-    toast("🔊 Playing Hindi audio...");
+    const voiceName = selectedVoice ? selectedVoice.name.split(' ')[0] : 'Default';
+    toast(`🔊 ${voiceName} speaking Hindi...`);
   };
 
   window.speechSynthesis.speak(u);
@@ -516,11 +538,29 @@ function confetti() {
 window.addEventListener("load", () => {
   // Load voices for better Hindi TTS
   if ('speechSynthesis' in window) {
-    speechSynthesis.getVoices();
-    speechSynthesis.onvoiceschanged = () => {
-      speechSynthesis.getVoices();
-      console.log('Available voices:', speechSynthesis.getVoices().map(v => v.name + ' (' + v.lang + ')'));
+    // Function to load and display available voices
+    const loadVoices = () => {
+      const voices = speechSynthesis.getVoices();
+      console.log('Available voices:', voices.map(v => `${v.name} (${v.lang}) ${v.localService ? '[Local]' : '[Remote]'}`));
+      
+      // Find and log the best Hindi voices
+      const hindiVoices = voices.filter(v => 
+        v.lang.includes('hi') || 
+        v.lang === 'en-IN' ||
+        v.name.toLowerCase().includes('hindi') ||
+        v.name.toLowerCase().includes('india')
+      );
+      
+      if (hindiVoices.length > 0) {
+        console.log('Hindi/Indian voices found:', hindiVoices.map(v => `${v.name} (${v.lang})`));
+      } else {
+        console.log('No Hindi voices detected. Speech will use default voice.');
+      }
     };
+    
+    // Load voices immediately and on change
+    loadVoices();
+    speechSynthesis.onvoiceschanged = loadVoices;
     
     // Force voice loading on mobile
     setTimeout(() => {
@@ -530,6 +570,8 @@ window.addEventListener("load", () => {
         const utterance = new SpeechSynthesisUtterance('');
         speechSynthesis.speak(utterance);
         speechSynthesis.cancel();
+        // Try loading again after a delay
+        setTimeout(loadVoices, 1000);
       }
     }, 100);
   }
