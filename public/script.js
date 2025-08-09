@@ -27,6 +27,58 @@ const TRANSLITERATION_MAP = {
   '५': '5', '६': '6', '७': '7', '८': '8', '९': '9'
 };
 
+function transliterateHindi(text) {
+  if (!text || typeof text !== 'string') return text;
+  
+  // Check if text contains Hindi characters
+  if (!/[\u0900-\u097F]/.test(text)) return text;
+  
+  let result = '';
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    
+    // If it's a Hindi character, transliterate it
+    if (TRANSLITERATION_MAP[char]) {
+      result += TRANSLITERATION_MAP[char];
+    } else if (char >= '\u0900' && char <= '\u097F') {
+      // Unknown Devanagari character, keep as is
+      result += char;
+    } else {
+      // Non-Hindi character (space, punctuation, English), keep as is
+      result += char;
+    }
+  }
+  
+  return result;
+}
+
+// Hindi to Latin transliteration mapping
+const TRANSLITERATION_MAP = {
+  // Vowels
+  'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ii', 'उ': 'u', 'ऊ': 'uu',
+  'ऋ': 'ri', 'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au',
+  
+  // Consonants
+  'क': 'ka', 'ख': 'kha', 'ग': 'ga', 'घ': 'gha', 'ङ': 'nga',
+  'च': 'cha', 'छ': 'chha', 'ज': 'ja', 'झ': 'jha', 'ञ': 'nya',
+  'ट': 'ta', 'ठ': 'tha', 'ड': 'da', 'ढ': 'dha', 'ण': 'na',
+  'त': 'ta', 'थ': 'tha', 'द': 'da', 'ध': 'dha', 'न': 'na',
+  'प': 'pa', 'फ': 'pha', 'ब': 'ba', 'भ': 'bha', 'म': 'ma',
+  'य': 'ya', 'र': 'ra', 'ल': 'la', 'व': 'va',
+  'श': 'sha', 'ष': 'sha', 'स': 'sa', 'ह': 'ha',
+  
+  // Vowel marks
+  'ा': 'aa', 'ि': 'i', 'ी': 'ii', 'ु': 'u', 'ू': 'uu',
+  'ृ': 'ri', 'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au',
+  
+  // Special characters
+  'ं': 'n', 'ँ': 'n', 'ः': 'h', '्': '', 'ऽ': "'",
+  
+  // Numbers
+  '०': '0', '१': '1', '२': '2', '३': '3', '४': '4',
+  '५': '5', '६': '6', '७': '7', '८': '8', '९': '9'
+};
+
 // Normalize common Hinglish to Devanagari
 function normalizeHinglishToDev(text) {
   return text
@@ -89,6 +141,11 @@ function addMsg(role, content) {
   const originalContent = content;
   const displayContent = transliterateHindi(content);
   
+  
+  // Store original Hindi for TTS, create transliterated version for display
+  const originalContent = content;
+  const displayContent = transliterateHindi(content);
+  
   const div = document.createElement("div");
   div.className = `msg ${role}`;
   
@@ -110,10 +167,15 @@ function addMsg(role, content) {
       <div class="msg-header">
         <span class="speaker">You:</span>
       </div>
-      <div class="msg-content">${content}</div>
+      <div class="msg-content">${displayContent}</div>
     `;
   }
-
+    div.innerHTML = `
+      <div class="msg-header">
+        <span class="speaker">You:</span>
+      </div>
+      <div class="msg-content">${content}</div>
+    `;
   chat.appendChild(div);
   render();
 }
@@ -325,11 +387,14 @@ function renderPhrases() {
     b.className = "phrase-btn";
     b.textContent = p.englishIntro || p.hindiPhrase;
     b.title = p.englishMeaning || p.englishIntro;
+    b.title = p.englishMeaning || p.englishIntro;
     b.style.cursor = "pointer";
     b.setAttribute("ontouchstart", ""); // Enable :active on iOS
     b.addEventListener("click", () => {
       // Create a lesson format: English intro + Hindi phrase
       const lessonText = `${p.englishIntro} |HINDI|${p.hindiPhrase}`;
+      speak(lessonText);
+      input.value = p.pronunciation || p.hindiPhrase;
       speak(lessonText);
       input.value = p.pronunciation || p.hindiPhrase;
       GAMIFY.awardXP(2);
@@ -638,9 +703,40 @@ function render() {
     chat.appendChild(div);
   });
   
-  chat.scrollTop = chat.scrollHeight;
+  render();
 }
 
 function speak(text) {
   speakWithAzure(text);
-}
+  history.forEach(m => {
+    const div = document.createElement("div");
+    div.className = `msg ${m.role}`;
+    
+    // Store original for TTS, transliterate for display
+    const originalContent = m.content;
+    const displayContent = transliterateHindi(m.content);
+    
+    if (m.role === "assistant") {
+      div.innerHTML = `
+        <div class="msg-header">
+          <span class="speaker">Asha Aunty:</span>
+          <button class="listen-btn" onclick="speak('${originalContent.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
+                  ontouchstart="" style="cursor: pointer;">
+            <span>🔊</span>
+          </button>
+        </div>
+        <div class="msg-content">${displayContent}</div>
+      `;
+    } else {
+      div.innerHTML = `
+        <div class="msg-header">
+          <span class="speaker">You:</span>
+        </div>
+        <div class="msg-content">${displayContent}</div>
+      `;
+    }
+    
+    chat.appendChild(div);
+  });
+  
+  chat.scrollTop = chat.scrollHeight;
