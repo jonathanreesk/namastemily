@@ -345,9 +345,9 @@ async function loadStaticPhrases() {
 async function loadAIPhrases() {
   try {
     console.log('Loading AI phrases for scene:', sceneSel?.value);
-    // Skip AI phrase generation in development - use static phrases instead
+    // Skip AI phrase generation in development - use static phrases instead  
     console.log('Development mode: skipping AI phrase generation, using static phrases');
-    throw new Error('Development mode - using static phrases');
+    return; // Simply return without throwing error
     
   } catch (e) {
     console.error('AI phrase generation failed with error:', e);
