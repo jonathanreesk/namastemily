@@ -84,6 +84,9 @@ function addMsg(role, content) {
       <div class="msg-header">
         <span class="speaker">${prefix.split(':')[0]}:</span>
         <button class="listen-btn" onclick="speak('${originalContent.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
+                ontouchstart="" style="cursor: pointer;">
+          <span>🔊</span>
+        </button>
       </div>
       <div class="msg-content">${displayContent}</div>
     `;
@@ -93,11 +96,6 @@ function addMsg(role, content) {
         <span class="speaker">You:</span>
       </div>
       <div class="msg-content">${content}</div>
-    div.innerHTML = `
-      <div class="msg-header">
-        <span class="speaker">${prefix.split(':')[0]}:</span>
-      </div>
-      <div class="msg-content">${displayContent}</div>
     `;
   }
 
@@ -109,7 +107,7 @@ async function speakWithAzure(text) {
   try {
     toast("🔊 Generating authentic Delhi Hindi with phoneme corrections...");
     
-    const resp = await fetch(`${API}/api/tts-azure`, {
+    const resp = await fetch(\`${API}/api/tts-azure`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, slow: true })
@@ -118,7 +116,7 @@ async function speakWithAzure(text) {
     if (!resp.ok) {
       const errorText = await resp.text();
       console.error('Azure TTS error:', errorText);
-      throw new Error(`Azure TTS failed: ${errorText}`);
+      throw new Error(\`Azure TTS failed: ${errorText}`);
     }
     
     const blob = await resp.blob();
@@ -188,7 +186,7 @@ async function send() {
   input.value = "";
 
   try {
-    const resp = await fetch(`${API}/api/roleplay`, {
+    const resp = await fetch(\`${API}/api/roleplay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -199,7 +197,7 @@ async function send() {
     });
     
     if (!resp.ok) {
-      throw new Error(`HTTP ${resp.status}`);
+      throw new Error(\`HTTP ${resp.status}`);
     }
     
     const data = await resp.json();
@@ -297,8 +295,8 @@ async function recordAndSendToServer() {
         fd.append("audio", blob, "audio.webm");
         
         try {
-          const resp = await fetch(`${API}/api/stt`, { method: "POST", body: fd });
-          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const resp = await fetch(\`${API}/api/stt`, { method: "POST", body: fd });
+          if (!resp.ok) throw new Error(\`HTTP ${resp.status}`);
           
           const data = await resp.json();
           input.value = data.text || "";
@@ -358,7 +356,7 @@ function renderPhrases() {
   pack.forEach(p => {
     const b = document.createElement("button");
     b.textContent = p.hi;
-    b.title = `${p.en} (${p.tr})`;
+    b.title = \`${p.en} (${p.tr})`;
     b.style.cursor = "pointer";
     b.setAttribute("ontouchstart", ""); // Enable :active on iOS
     b.addEventListener("click", () => {
@@ -487,7 +485,7 @@ const GAMIFY = {
     const push = (id, label, emo) => { 
       if (!b[id]) { 
         b[id] = {label, emo, date: new Date().toISOString()}; 
-        toast(`${emo} Achievement unlocked: ${label}!`); 
+        toast(\`${emo} Achievement unlocked: ${label}!`); 
         confetti(); 
       } 
     };
@@ -547,7 +545,7 @@ const MISSIONS = {
   
   render() {
     const m = this.pick();
-    missionText.textContent = `${m.text} (Scene: ${m.scene})`;
+    missionText.textContent = \`${m.text} (Scene: ${m.scene})`;
     sceneSel.value = m.scene;
     renderPhrases();
   },
@@ -641,7 +639,7 @@ function render() {
   chat.innerHTML = "";
   history.forEach(m => {
     const div = document.createElement("div");
-    div.className = `msg ${m.role}`;
+    div.className = \`msg ${m.role}`;
     
     // Store original for TTS, transliterate for display
     const originalContent = m.content;
@@ -670,31 +668,7 @@ function render() {
     chat.appendChild(div);
   });
   
-  chat.scrollTop = chat.scrollHeight;
-    const div = document.createElement("div");
-    div.className = `msg ${msg.role}`;
-    
-    if (msg.role === "assistant") {
-      div.innerHTML = `
-        <div class="msg-header">
-          <span class="speaker">Asha Aunty:</span>
-          <button class="speak-btn" onclick="speak('${msg.content.replace(/'/g, "\\'")}')">🔊</button>
-        </div>
-        <div class="msg-content">${msg.content}</div>
-      `;
-    } else {
-      div.innerHTML = `
-        <div class="msg-header">
-          <span class="speaker">You:</span>
-        </div>
-        <div class="msg-content">${msg.content}</div>
-      `;
-    }
-    
-    chat.appendChild(div);
-  });
-  
-  chat.scrollTop = chat.scrollHeight;
+  chat.scrollTop = chat\.scrollHeight;
 }
 
 function speak(text) {
