@@ -42,6 +42,7 @@ export const handler = async (event, context) => {
     if (!process.env.OPENAI_API_KEY) {
       console.error('OpenAI API key not found in environment variables');
       console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('OPENAI')));
+      console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('OPENAI')));
       return {
         statusCode: 500,
         headers,
@@ -52,6 +53,10 @@ export const handler = async (event, context) => {
         })
       };
     }
+
+    // Log API key status (first 8 chars only for security)
+    console.log('OpenAI API key found:', process.env.OPENAI_API_KEY.substring(0, 8) + '...');
+    console.log('API key length:', process.env.OPENAI_API_KEY.length);
 
     // Log API key status (first 8 chars only for security)
     console.log('OpenAI API key found:', process.env.OPENAI_API_KEY.substring(0, 8) + '...');
@@ -98,6 +103,7 @@ export const handler = async (event, context) => {
     
     console.log('Making OpenAI API call with model: gpt-4o-mini');
     console.log('Messages being sent:', JSON.stringify(messages, null, 2));
+    console.log('Messages being sent:', JSON.stringify(messages, null, 2));
     
     const resp = await client.chat.completions.create({
       model: "gpt-4o-mini",
@@ -106,6 +112,7 @@ export const handler = async (event, context) => {
     });
     
     console.log('OpenAI API response received');
+    console.log('Response status:', resp);
     console.log('Response status:', resp);
     const reply = resp.choices?.[0]?.message?.content || "Namaste, Emily! Kaise madad karun? (How can I help?)";
 
@@ -117,6 +124,15 @@ export const handler = async (event, context) => {
   } catch (e) {
     console.error('Roleplay function error:', e);
     console.error('Error stack:', e.stack);
+    console.error('Error name:', e.name);
+    console.error('Error message:', e.message);
+    
+    // Check if it's an OpenAI API error
+    if (e.status) {
+      console.error('OpenAI API status:', e.status);
+      console.error('OpenAI API error:', e.error);
+    }
+    
     console.error('Error name:', e.name);
     console.error('Error message:', e.message);
     
