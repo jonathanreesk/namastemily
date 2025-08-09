@@ -107,7 +107,7 @@ async function speakWithAzure(text) {
     console.log('Attempting Azure TTS for:', text.substring(0, 50) + '...');
     toast("🔊 Playing audio...");
     
-    const resp = await fetch(`${API}/api/tts-azure`, {
+    const resp = await fetch(`${API}/api/speech`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, slow: true })
@@ -115,10 +115,10 @@ async function speakWithAzure(text) {
     
     if (!resp.ok) {
       const errorData = await resp.json().catch(() => ({}));
-      console.error('Azure TTS API error:', resp.status, errorData);
+      console.error('Speech API error:', resp.status, errorData);
       const errorText = await resp.text();
-      console.error('Azure TTS error:', errorText);
-      throw new Error(`Azure TTS failed: ${errorText}`);
+      console.error('Speech API error:', errorText);
+      throw new Error(`Speech API failed: ${errorText}`);
     }
     
     const blob = await resp.blob();
@@ -140,7 +140,7 @@ async function speakWithAzure(text) {
     await audio.play();
     
   } catch (e) {
-    console.error('Azure TTS failed, falling back to browser TTS:', e);
+    console.error('Speech API failed, falling back to browser TTS:', e);
     console.log('Error details:', e.message);
     toast("Using browser voice...");
     
