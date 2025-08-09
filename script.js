@@ -83,6 +83,7 @@ let history = [
 render();
 
 function addMsg(role, content) {
+  console.log('Adding message:', role, content.substring(0, 50) + '...');
   history.push({ role, content });
   const div = document.createElement("div");
   div.className = `msg ${role}`;
@@ -106,11 +107,34 @@ function addMsg(role, content) {
   
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
+  console.log('Message added to chat, total messages:', history.length);
 }
 
 function render() {
   chat.innerHTML = "";
-  history.forEach(m => addMsg(m.role, m.content));
+  history.forEach(m => {
+    const div = document.createElement("div");
+    div.className = `msg ${m.role}`;
+    
+    if (m.role === "assistant") {
+      div.innerHTML = `
+        <div class="msg-header">
+          <strong>Asha Aunty:</strong>
+          <button class="listen-btn" onclick="speak('${m.content.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
+                  ontouchstart="" style="cursor: pointer;">
+            <span>🔊</span>
+          </button>
+        </div>
+        <div class="msg-content">${m.content}</div>
+      `;
+    } else {
+      div.innerHTML = `<strong>You:</strong> ${m.content}`;
+    }
+    
+    chat.appendChild(div);
+  });
+  
+  chat.scrollTop = chat.scrollHeight;
 }
 
 function speak(text) {
@@ -181,94 +205,6 @@ function speakWithBrowser(text) {
   }
 }
 
-async function speakWithAzure(text) {
-  try {
-    console.log('Attempting Azure TTS for:', text.substring(0, 50) + '...');
-    toast("🔊 Playing audio...");
-    
-    const resp = await fetch(`${API}/api/speech`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, slow: true })
-    });
-    
-    if (!resp.ok) {
-      let errorText;
-      try {
-          // Stop any audio before auto-speaking scene change response
-          setTimeout(() => {
-            stopAllAudio();
-            if (/[\u0900-\u097F]/.test(data.reply)) {
-              speak(data.reply);
-            }
-          }, 500);
-        errorText = await resp.text();
-      } catch (e) {
-        errorText = `HTTP ${resp.status}`;
-      }
-      console.error('Speech API error:', resp.status, errorText);
-      throw new Error(`Speech API failed: ${resp.status} - ${errorText}`);
-    }
-    
-    const blob = await resp.blob();
-    if (blob.size === 0) {
-      throw new Error("Empty audio response");
-    }
-    
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    
-    audio.onplay = () => {
-      toast("🔊 Playing Hindi audio!");
-    };
-    
-    audio.onended = () => {
-      URL.revokeObjectURL(url); // Clean up memory
-    };
-    
-    audio.onerror = () => {
-      throw new Error("Audio playback failed");
-    };
-    
-    await audio.play();
-    
-  } catch (e) {
-    console.error('Speech API failed, falling back to browser TTS:', e);
-    toast(`Azure TTS failed (${e.message}), using browser voice...`);
-    
-    // Fallback to browser TTS if Azure TTS fails
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "hi-IN";
-      u.rate = 0.6;
-      u.pitch = 1.0;
-      u.volume = 0.9;
-      
-      // Try to find the best Hindi voice available
-      const voices = window.speechSynthesis.getVoices();
-      const hindiVoice = voices.find(voice => 
-        voice.lang.includes('hi') || 
-        voice.name.toLowerCase().includes('hindi') ||
-        voice.name.toLowerCase().includes('india')
-      );
-      
-      if (hindiVoice) {
-        u.voice = hindiVoice;
-      }
-      
-      u.onerror = () => {
-        toast("Audio not available on this device 📱");
-      };
-      
-      window.speechSynthesis.speak(u);
-    } else {
-      toast("Audio not available on this device 📱");
-    }
-  }
-}
-
 async function send() {
   const text = input.value.trim();
   if (!text) return;
@@ -302,14 +238,7 @@ async function send() {
     addMsg("assistant", reply);
     
     // Auto-speak the response
-    setTimeout(() => {
-      // Only auto-speak if it contains Hindi text
-      if (/[\u0900-\u097F]/.test(reply)) {
-        // Stop any currently playing audio before auto-speaking
-        stopAllAudio();
-        speak(reply);
-      }
-    }, 500);
+    setTimeout(() => speak(reply), 500);
     
     // Award XP and update gamification
     GAMIFY.awardXP(5);
@@ -382,70 +311,478 @@ let phrasePacks = {};
 
 async function loadPhrases() {
   try {
-    const resp = await fetch("phrases.json");
-    phrasePacks = await resp.json();
+    // Try to load AI-generated phrases first
+    await loadAIPhrases();
+    
+    // Fallback to static phrases if AI fails
+    if (Object.keys(phrasePacks).length === 0) {
+      await loadStaticPhrases();
+    }
     renderPhrases();
   } catch (e) {
     console.warn("Could not load phrases:", e);
   }
 }
 
+async function loadStaticPhrases() {
+  try {
+    console.log('Loading static phrases as fallback');
+    const resp = await fetch("phrases.json");
+    const staticPhrases = await resp.json();
+    console.log('Static phrases loaded:', Object.keys(staticPhrases));
+    // Merge with existing phrases
+    Object.keys(staticPhrases).forEach(scene => {
+      if (!phrasePacks[scene] || phrasePacks[scene].length === 0) {
+        phrasePacks[scene] = staticPhrases[scene];
+        console.log('Added static phrases for scene:', scene);
+      }
+    });
+  } catch (e) {
+    console.error("Could not load static phrases:", e);
+  }
+}
+
+async function loadAIPhrases() {
+  try {
+    console.log('Loading AI phrases for scene:', sceneSel?.value);
+    const currentScene = sceneSel?.value || 'market';
+    const currentLevel = levelSel?.value || 'beginner';
+    
+    const userProgress = {
+      scene: currentScene,
+      level: currentLevel,
+      xp: GAMIFY.state?.xp || 0,
+      scenes: GAMIFY.state?.scenes || {},
+      phrasesTapped: GAMIFY.state?.phrasesTapped || 0
+    };
+    
+    console.log(`Generating AI phrases for ${currentScene} scene at ${currentLevel} level`);
+    const resp = await fetch(`${API}/api/missions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: 'suggestions', userProgress })
+    });
+    
+    if (!resp.ok) {
+      const errorText = await resp.text();
+      console.error('AI phrase generation failed:', resp.status, errorText);
+      throw new Error('Failed to generate suggestions');
+    }
+    
+    const suggestions = await resp.json();
+    console.log('AI suggestions received:', JSON.stringify(suggestions, null, 2));
+    
+    // Convert AI suggestions to phrase pack format
+    const scene = currentScene;
+    if (Array.isArray(suggestions) && suggestions.length > 0) {
+      phrasePacks[scene] = suggestions;
+      console.log(`Successfully stored ${suggestions.length} AI phrases for ${scene} scene`);
+    } else {
+      console.error('Invalid AI suggestions format - not an array or empty:', suggestions);
+      throw new Error('Invalid suggestions format');
+    }
+    
+  } catch (e) {
+    console.error('AI phrase generation failed with error:', e);
+    // Force fallback to static phrases
+    await loadStaticPhrases();
+  }
+}
+
 function renderPhrases() {
   const scene = sceneSel.value;
   const pack = phrasePacks[scene] || [];
+  console.log('Rendering phrases for scene:', scene, 'Pack length:', pack.length);
+  console.log('Available phrase packs:', Object.keys(phrasePacks));
   phrasesBar.innerHTML = "";
   
+  // Add header with More Phrases button
+  const headerDiv = document.createElement("div");
+  headerDiv.style.cssText = `
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--gray-200);
+  `;
+  
+  const titleSpan = document.createElement("span");
+  titleSpan.textContent = `${scene.charAt(0).toUpperCase() + scene.slice(1)} Phrases`;
+  titleSpan.style.cssText = `
+    font-weight: 600;
+    color: var(--gray-800);
+    font-size: var(--text-lg);
+  `;
+  
+  const moreBtn = document.createElement("button");
+  moreBtn.innerHTML = `
+    <span class="btn-icon">✨</span>
+    <span class="btn-text">Get New Phrases</span>
+  `;
+  moreBtn.className = "more-phrases-btn";
+  moreBtn.style.cssText = `
+    background: var(--primary-500);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-6);
+    font-weight: 600;
+    font-size: var(--text-base);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: 48px;
+  `;
+  
+  moreBtn.addEventListener("click", async () => {
+    console.log('More phrases button clicked');
+    moreBtn.disabled = true;
+    moreBtn.innerHTML = `
+      <span class="btn-icon loading-spinner">⏳</span>
+      <span class="btn-text">Loading...</span>
+    `;
+    moreBtn.style.opacity = "0.7";
+    
+    try {
+      // Clear current phrases to force fresh generation
+      delete phrasePacks[scene];
+      console.log('Cleared phrases for scene:', scene);
+      await loadAIPhrases();
+      renderPhrases();
+      toast("🎉 Fresh phrases loaded for " + scene + "!");
+      GAMIFY.awardXP(3);
+    } catch (e) {
+      console.error('Failed to load more phrases:', e);
+      toast("Couldn't load new phrases. Try again! 🔄");
+    } finally {
+      moreBtn.disabled = false;
+      moreBtn.innerHTML = `
+        <span class="btn-icon">✨</span>
+        <span class="btn-text">Get New Phrases</span>
+      `;
+      moreBtn.style.opacity = "1";
+    }
+  });
+  
+  // Add mobile touch support for More Phrases button
+  moreBtn.addEventListener("touchend", (e) => {
+    e.preventDefault();
+    console.log('Mobile tap on More Phrases button');
+    if (!moreBtn.disabled) {
+      moreBtn.click();
+    }
+  });
+  
+  headerDiv.appendChild(titleSpan);
+  headerDiv.appendChild(moreBtn);
+  phrasesBar.appendChild(headerDiv);
+  
   if (pack.length === 0) {
-    phrasesBar.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No phrases available for this scene yet 📝</p>';
+    console.log('No phrases found, attempting to load AI phrases');
+    const loadingDiv = document.createElement("div");
+    loadingDiv.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 20px;">Loading personalized phrases... 🤖</p>';
+    phrasesBar.appendChild(loadingDiv);
+    // Try to load AI phrases for this scene
+    setTimeout(async () => {
+      await loadAIPhrases();
+      if (phrasePacks[scene]?.length > 0) {
+        console.log('AI phrases loaded successfully, re-rendering');
+        renderPhrases(); // Re-render with new phrases
+      } else {
+        console.log('AI phrases failed, loading static phrases');
+        // Fallback to static phrases if AI fails
+        await loadStaticPhrases();
+        renderPhrases();
+      }
+    }, 100);
     return;
   }
   
+  // Create phrases container
+  const phrasesContainer = document.createElement("div");
+  phrasesContainer.style.cssText = `
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  `;
+  
+  console.log('Rendering', pack.length, 'phrases');
   pack.forEach(p => {
     const b = document.createElement("button");
-    b.textContent = p.hi;
-    b.title = `${p.en} (${p.tr})`;
+    b.className = "phrase-btn";
+    // Handle both AI format and static format
+    const displayText = p.englishIntro || p.en || p.hindiPhrase || p.hi;
+    const tooltip = p.englishMeaning || p.en || p.englishIntro;
+    
+    b.textContent = displayText;
+    b.title = tooltip;
     b.style.cursor = "pointer";
     b.setAttribute("ontouchstart", ""); // Enable :active on iOS
     b.addEventListener("click", () => {
-      input.value = p.tr;
-      speak(p.hi); // Speak the Hindi phrase when clicked
+      // Create a lesson format: English intro + Hindi phrase
+      const englishIntro = p.englishIntro || `Let me teach you: "${p.en || p.englishMeaning}"`;
+      const hindiPhrase = p.hindiPhrase || p.hi;
+      const pronunciation = p.pronunciation || p.tr;
+      
+      console.log('Phrase button clicked:', p);
+      
+      try {
+        // Add the phrase lesson to chat
+        const lessonMessage = `${englishIntro} The Hindi is: ${hindiPhrase}${pronunciation ? ` (${pronunciation})` : ''}`;
+        const userMessage = `Teach me: "${p.englishMeaning || p.en || p.englishIntro}"`;
+        
+        console.log('Adding user message:', userMessage);
+        addMsg("user", userMessage);
+        
+        // Auto-respond from Asha with the lesson
+        setTimeout(() => {
+          console.log('Adding assistant message:', lessonMessage);
+          addMsg("assistant", lessonMessage);
+          setTimeout(() => speak(lessonMessage), 300);
+        }, 500);
+        
+        // Also put the pronunciation in the input for practice
+        setTimeout(() => {
+          input.value = pronunciation || hindiPhrase;
+          console.log('Added to input:', pronunciation || hindiPhrase);
+        }, 1000);
+        
+        toast("Phrase added to conversation! Practice saying it 🗣️");
+      } catch (error) {
+        console.error('Error handling phrase click:', error);
+        toast("Something went wrong with the phrase. Try again! 🔄");
+      }
+      
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
-      toast("Phrase added! Try saying it out loud 🗣️");
     });
-    // Add touch event for better mobile response
+    
+    // Add proper mobile touch events
     b.addEventListener("touchstart", (e) => {
-      e.preventDefault();
+      console.log('Touch start on phrase button');
       b.style.transform = "scale(0.95)";
-    });
+    }, { passive: true });
+    
+    b.addEventListener("touchend", (e) => {
+      console.log('Touch end on phrase button');
+      b.style.transform = "scale(1)";
+    }, { passive: true });
+    
+    // Ensure mobile tap works
     b.addEventListener("touchend", (e) => {
       e.preventDefault();
-      b.style.transform = "scale(1)";
+      console.log('Mobile tap detected, triggering click');
+      b.click();
     });
-    phrasesBar.appendChild(b);
+    
+    phrasesContainer.appendChild(b);
+  });
+  
+  phrasesBar.appendChild(phrasesContainer);
+}
+
+// Scene Explorer Modal
+function openSceneExplorer() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-content scene-explorer">
+      <div class="modal-header">
+        <h2>🧭 Scene Explorer</h2>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-subtitle">Choose a scene to practice Hindi conversations</p>
+        <div class="scene-grid">
+          ${getSceneGridHTML()}
+        </div>
+        <div class="scene-stats">
+          <div class="stat-item">
+            <span class="stat-number">${Object.keys(GAMIFY.state.scenes || {}).length}</span>
+            <span class="stat-label">Scenes Explored</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">${Object.values(GAMIFY.state.scenes || {}).reduce((a, b) => a + b, 0)}</span>
+            <span class="stat-label">Total Conversations</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Add click handlers for scene cards
+  modal.querySelectorAll('.scene-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const scene = card.dataset.scene;
+      sceneSel.value = scene;
+      sceneSel.dispatchEvent(new Event('change'));
+      modal.remove();
+      toast(`Switched to ${scene} scene! 🎯`);
+      GAMIFY.awardXP(2);
+    });
+  });
+  
+  // Close on backdrop click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
   });
 }
 
+function getSceneGridHTML() {
+  const scenes = [
+    { id: 'market', icon: '🛒', name: 'Market', desc: 'Buy vegetables & bargain' },
+    { id: 'taxi', icon: '🚕', name: 'Taxi', desc: 'Get around safely' },
+    { id: 'neighbor', icon: '👋', name: 'Neighbor', desc: 'Meet your community' },
+    { id: 'introductions', icon: '🤝', name: 'Introductions', desc: 'Introduce family' },
+    { id: 'church', icon: '⛪', name: 'Church', desc: 'Respectful greetings' },
+    { id: 'rickshaw', icon: '🛺', name: 'Rickshaw', desc: 'Local transport' }
+  ];
+  
+  return scenes.map(scene => {
+    const count = GAMIFY.state.scenes?.[scene.id] || 0;
+    return `
+      <div class="scene-card" data-scene="${scene.id}">
+        <div class="scene-icon">${scene.icon}</div>
+        <div class="scene-name">${scene.name}</div>
+        <div class="scene-desc">${scene.desc}</div>
+        <div class="scene-count">${count} conversations</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Phrase Explorer Modal
+function openPhraseExplorer() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-content phrase-explorer">
+      <div class="modal-header">
+        <h2>🗣️ Phrase Explorer</h2>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="phrase-stats">
+          <div class="stat-item">
+            <span class="stat-number">${GAMIFY.state.phrasesTapped || 0}</span>
+            <span class="stat-label">Phrases Practiced</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">${Object.keys(phrasePacks).length}</span>
+            <span class="stat-label">Scenes Explored</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">${Object.values(phrasePacks).reduce((total, pack) => total + pack.length, 0)}</span>
+            <span class="stat-label">Total Phrases</span>
+          </div>
+        </div>
+        <div class="phrase-categories">
+          ${getPhraseCategories()}
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Add click handlers for phrase items
+  modal.querySelectorAll('.phrase-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const text = item.dataset.hindi;
+      if (text) {
+        speak(text);
+        toast("🔊 Playing phrase pronunciation!");
+        GAMIFY.awardXP(1);
+      }
+    });
+  });
+  
+  // Close on backdrop click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+}
+
+function getPhraseCategories() {
+  return Object.entries(phrasePacks).map(([scene, phrases]) => {
+    const sceneIcons = {
+      market: '🛒', taxi: '🚕', neighbor: '👋',
+      introductions: '🤝', church: '⛪', rickshaw: '🛺'
+    };
+    
+    return `
+      <div class="phrase-category">
+        <h3 class="category-title">
+          ${sceneIcons[scene] || '📝'} ${scene.charAt(0).toUpperCase() + scene.slice(1)}
+        </h3>
+        <div class="phrase-list">
+          ${phrases.slice(0, 3).map(phrase => `
+            <div class="phrase-item" data-hindi="${phrase.hindiPhrase || phrase.hi}">
+              <div class="phrase-hindi">${phrase.hindiPhrase || phrase.hi}</div>
+              <div class="phrase-english">${phrase.englishMeaning || phrase.en}</div>
+            </div>
+          `).join('')}
+          ${phrases.length > 3 ? `<div class="phrase-more">+${phrases.length - 3} more phrases</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 sceneSel.addEventListener("change", () => {
+  console.log(`Scene changed to: ${sceneSel.value}`);
+  
+  // Clear existing phrases to force reload for new scene
+  const currentScene = sceneSel.value;
+  if (phrasePacks[currentScene]) {
+    console.log(`Using cached phrases for ${currentScene}`);
+  } else {
+    console.log(`Loading new phrases for ${currentScene}`);
+    phrasePacks[currentScene] = []; // Clear to force reload
+  }
+  
   renderPhrases();
+  
+  // Also regenerate mission for new scene
+  MISSIONS.render();
   
   // Update greeting based on scene
   if (history.length <= 1) {
     const s = sceneSel.value;
-    let open = "Namaste! Kaise madad karun? (Hello! How can I help?)";
     
-    const greetings = {
-      market: "Great choice! Let's learn essential market phrases. I'll teach you in English first, then we'll practice the Hindi. You'll be buying vegetables like a pro! 🥕",
-      taxi: "Perfect! Taxi phrases are super useful. I'll explain each phrase in English, then teach you the Hindi pronunciation. Let's learn how to get around safely! 🚕", 
-      rickshaw: "Excellent! Rickshaw rides are fun. I'll teach you the English meaning first, then the Hindi phrases for negotiating politely. 🛺",
-      neighbor: "Wonderful! Meeting neighbors is so important. I'll explain what to say in English, then teach you the Hindi greetings and introductions. 👋",
-      introductions: "Perfect choice! I'll help you learn how to introduce yourself and your family. English explanations first, then Hindi practice! 🤝",
-      church: "Great! I'll teach you respectful phrases for church interactions. English context first, then meaningful Hindi phrases! ⛪"
-    };
-    
-    open = greetings[s] || open;
-    history = [{ role: "assistant", content: open }];
-    render();
+    // Generate contextual greeting through AI
+    addMsg("user", `I want to practice the ${s} scene. Can you help me?`);
+    setTimeout(async () => {
+      try {
+        const resp = await fetch(`${API}/api/roleplay`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            history: [...history, { role: "user", content: `I want to practice the ${s} scene. Can you help me?` }],
+            scene: s,
+            level: levelSel.value
+          })
+        });
+        
+        if (resp.ok) {
+          const data = await resp.json();
+          const reply = data.reply || "Let me help you practice that scene!";
+          addMsg("assistant", reply);
+          setTimeout(() => speak(reply), 500);
+        }
+      } catch (e) {
+        console.error('Scene change greeting failed:', e);
+        const fallbackReply = `Great choice! Let's practice the ${s} scene. I'll help you learn the essential phrases step by step.`;
+        addMsg("assistant", fallbackReply);
+        setTimeout(() => speak(fallbackReply), 500);
+      }
+    }, 1000);
   }
 });
 
@@ -532,7 +869,7 @@ const GAMIFY = {
     const push = (id, label, emo) => { 
       if (!b[id]) { 
         b[id] = {label, emo, date: new Date().toISOString()}; 
-        toast(`${emo} Achievement unlocked: ${label}!`); 
+        toast(emo + " Achievement unlocked: " + label + "!"); 
         confetti(); 
       } 
     };
@@ -555,7 +892,7 @@ const GAMIFY = {
     const b = this.state.badges || {};
     
     if (Object.keys(b).length === 0) {
-      badgesBar.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">Start chatting to unlock achievements! 🏆</p>';
+      badgesBar.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 20px;">Start chatting to unlock achievements! 🏆</p>';
       return;
     }
     
@@ -563,6 +900,24 @@ const GAMIFY = {
       const el = document.createElement("div");
       el.className = "badge";
       el.innerHTML = `<span class="emo">${v.emo}</span><span>${v.label}</span>`;
+      
+      // Make badges clickable for explorers
+      if (id === 'explorer') {
+        el.style.cursor = 'pointer';
+        el.title = 'Click to open Scene Explorer';
+        el.addEventListener('click', () => {
+          openSceneExplorer();
+          toast("🧭 Scene Explorer opened!");
+        });
+      } else if (id === 'phrase_5') {
+        el.style.cursor = 'pointer';
+        el.title = 'Click to open Phrase Explorer';
+        el.addEventListener('click', () => {
+          openPhraseExplorer();
+          toast("🗣️ Phrase Explorer opened!");
+        });
+      }
+      
       badgesBar.appendChild(el);
     });
   },
@@ -576,32 +931,113 @@ const GAMIFY = {
 
 // Daily Missions
 const MISSIONS = {
-  pool: [
-    {scene:"market", text:"Buy 2 vegetables and ask about the price politely"},
-    {scene:"rickshaw", text:"Ask for a ride and practice friendly bargaining"},
-    {scene:"introductions", text:"Introduce Jonathan and Sophia to a neighbor"},
-    {scene:"church", text:"Greet an elder respectfully and say thank you"},
-    {scene:"neighbor", text:"Ask a neighbor how long they've lived there"},
-    {scene:"taxi", text:"Ask about fare and request careful driving"}
-  ],
+  currentMission: null,
   
-  pick() {
-    const day = new Date().getDate();
-    return this.pool[day % this.pool.length];
+  async generateDaily() {
+    try {
+      const currentScene = sceneSel?.value || 'market';
+      const currentLevel = levelSel?.value || 'beginner';
+      
+      const userProgress = {
+        scene: currentScene,
+        level: currentLevel,
+        xp: GAMIFY.state?.xp || 0,
+        scenes: GAMIFY.state?.scenes || {},
+        streak: GAMIFY.state?.streak || 0,
+        completedToday: GAMIFY.state?.missionCompletedToday || false,
+        phrasesTapped: GAMIFY.state?.phrasesTapped || 0
+      };
+      
+      console.log(`Generating daily mission for ${currentScene} scene at ${currentLevel} level`);
+      const resp = await fetch(`${API}/api/missions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: 'mission', userProgress })
+      });
+      
+      if (!resp.ok) {
+        console.warn('Mission API failed, using fallback mission');
+        return this.getFallbackMission();
+      }
+      
+      try {
+        const mission = await resp.json();
+        if (mission.error) {
+          console.warn('Mission API returned error, using fallback mission');
+          return this.getFallbackMission();
+        }
+        this.currentMission = mission;
+        return mission;
+      } catch (parseError) {
+        console.warn('Failed to parse mission response, using fallback mission');
+        return this.getFallbackMission();
+      }
+    } catch (error) {
+      console.warn('Mission generation failed, using fallback mission:', error);
+      return this.getFallbackMission();
+    }
   },
   
-  render() {
-    const m = this.pick();
-    missionText.textContent = `${m.text} (Scene: ${m.scene})`;
-    sceneSel.value = m.scene;
+  getFallbackMission() {
+    const fallbackMissions = [
+      {
+        scene: "market",
+        title: "Buy Fresh Vegetables",
+        description: "Visit the local sabzi mandi and practice asking for seasonal vegetables in Hindi",
+        specificGoals: ["Ask for 2 vegetables", "Negotiate price politely", "Ask if items are fresh"],
+        culturalTip: "In Indian markets, gentle bargaining is expected and shows engagement"
+      },
+      {
+        scene: "taxi",
+        title: "Navigate to Temple",
+        description: "Take a taxi to the local temple and practice giving directions in Hindi",
+        specificGoals: ["Tell driver destination", "Ask about fare", "Say thank you"],
+        culturalTip: "Always confirm the fare before starting your journey"
+      },
+      {
+        scene: "neighbor",
+        title: "Meet Your Neighbor",
+        description: "Introduce yourself to a new neighbor and practice basic conversation",
+        specificGoals: ["Share your name", "Ask about their family", "Exchange pleasantries"],
+        culturalTip: "Indians appreciate when foreigners make an effort to speak Hindi"
+      }
+    ];
+    
+    const mission = fallbackMissions[Math.floor(Math.random() * fallbackMissions.length)];
+    this.currentMission = mission;
+    return mission;
+  },
+  
+  async render() {
+    const m = this.currentMission || await this.generateDaily();
+    missionText.innerHTML = `
+      <strong>${m.title}</strong><br>
+      ${m.description}
+      ${m.culturalTip ? `<br><em>💡 ${m.culturalTip}</em>` : ''}
+    `;
+    if (m.scene && sceneSel) {
+      sceneSel.value = m.scene;
+    }
     renderPhrases();
   },
   
   complete() {
+    GAMIFY.state.missionCompletedToday = true;
     GAMIFY.awardXP(20);
     GAMIFY.awardChai(1);
+    GAMIFY.save(GAMIFY.state);
     toast("🎯 Mission completed! +20 XP, +1 chai cup!");
     confetti();
+    
+    // Add mission completion to chat
+    const mission = this.currentMission;
+    if (mission) {
+      addMsg("user", `I completed today's mission: ${mission.title}! 🎯`);
+      // Auto-respond from Asha
+      setTimeout(() => {
+        addMsg("assistant", `Wonderful, Emily! You completed "${mission.title}" - that's exactly the kind of practice that will help you feel confident in India. Keep up the great work! 🌟`);
+      }, 1000);
+    }
   }
 };
 
@@ -654,29 +1090,11 @@ function confetti() {
 window.addEventListener("load", () => {
   // Load voices for better Hindi TTS
   if ('speechSynthesis' in window) {
-    // Function to load and display available voices
-    const loadVoices = () => {
-      const voices = speechSynthesis.getVoices();
-      console.log('Available voices:', voices.map(v => `${v.name} (${v.lang}) ${v.localService ? '[Local]' : '[Remote]'}`));
-      
-      // Find and log the best Hindi voices
-      const hindiVoices = voices.filter(v => 
-        v.lang.includes('hi') || 
-        v.lang === 'en-IN' ||
-        v.name.toLowerCase().includes('hindi') ||
-        v.name.toLowerCase().includes('india')
-      );
-      
-      if (hindiVoices.length > 0) {
-        console.log('Hindi/Indian voices found:', hindiVoices.map(v => `${v.name} (${v.lang})`));
-      } else {
-        console.log('No Hindi voices detected. Speech will use default voice.');
-      }
+    speechSynthesis.getVoices();
+    speechSynthesis.onvoiceschanged = () => {
+      speechSynthesis.getVoices();
+      console.log('Available voices:', speechSynthesis.getVoices().map(v => v.name + ' (' + v.lang + ')'));
     };
-    
-    // Load voices immediately and on change
-    loadVoices();
-    speechSynthesis.onvoiceschanged = loadVoices;
     
     // Force voice loading on mobile
     setTimeout(() => {
@@ -686,14 +1104,12 @@ window.addEventListener("load", () => {
         const utterance = new SpeechSynthesisUtterance('');
         speechSynthesis.speak(utterance);
         speechSynthesis.cancel();
-        // Try loading again after a delay
-        setTimeout(loadVoices, 1000);
       }
     }, 100);
   }
   
   GAMIFY.init();
-  MISSIONS.render();
+  MISSIONS.render(); // This will now generate AI missions
   GAMIFY.checkBadges();
   
   // Welcome message
