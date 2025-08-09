@@ -157,7 +157,32 @@ exports.handler = async (event, context) => {
         
         // future/plural polite "will take/go"
         .replace(/लेंगे/g, '<phoneme alphabet="ipa" ph="leːŋɡe">लेंगे</phoneme>')
-        .replace(/चलेंगे/g, '<phoneme alphabet="ipa" ph="t͡ʃəleːŋɡe">चलेंगे</phoneme>');
+        .replace(/चलेंगे/g, '<phoneme alphabet="ipa" ph="t͡ʃəleːŋɡe">चलेंगे</phoneme>')
+        
+        // copula / auxiliaries / negation / deictics
+        .replace(/हूँ/g, '<phoneme alphabet="ipa" ph="huː̃">हूँ</phoneme>')
+        .replace(/हैं/g, '<phoneme alphabet="ipa" ph="hɛ̃">हैं</phoneme>')
+        .replace(/नहीं/g, '<phoneme alphabet="ipa" ph="nəɦĩː">नहीं</phoneme>')
+        .replace(/कहाँ/g, '<phoneme alphabet="ipa" ph="kəɦãː">कहाँ</phoneme>')
+        .replace(/यहाँ/g, '<phoneme alphabet="ipa" ph="jəɦãː">यहाँ</phoneme>')
+        .replace(/वहाँ/g, '<phoneme alphabet="ipa" ph="ʋəɦãː">वहाँ</phoneme>')
+        
+        // politeness & set phrases
+        .replace(/कृपया/g, '<phoneme alphabet="ipa" ph="kɾɪpjaː">कृपया</phoneme>')
+        .replace(/धन्यवाद/g, '<phoneme alphabet="ipa" ph="d̪ʱənjəʋaːd̪">धन्यवाद</phoneme>')
+        .replace(/नमस्ते/g, '<phoneme alphabet="ipa" ph="nəməsˈteː">नमस्ते</phoneme>')
+        .replace(/ज़रा/g, '<phoneme alphabet="ipa" ph="zəɾaː">ज़रा</phoneme>')
+        .replace(/ज़रूर/g, '<phoneme alphabet="ipa" ph="zəˈruːɾ">ज़रूर</phoneme>')
+        .replace(/शुक्रिया/g, '<phoneme alphabet="ipa" ph="ʃʊkɾijaː">शुक्रिया</phoneme>')
+        .replace(/जी/g, '<phoneme alphabet="ipa" ph="d͡ʒiː">जी</phoneme>')
+        
+        // market & travel words
+        .replace(/थोड़ा/g, '<phoneme alphabet="ipa" ph="t̪ʰoːɽaː">थोड़ा</phoneme>')
+        .replace(/ज़्यादा/g, '<phoneme alphabet="ipa" ph="zjɑːd̪aː">ज़्यादा</phoneme>')
+        .replace(/कितना/g, '<phoneme alphabet="ipa" ph="kɪt̪naː">कितना</phoneme>')
+        .replace(/कीमत/g, '<phoneme alphabet="ipa" ph="kiːmət̪">कीमत</phoneme>')
+        .replace(/चाहिए/g, '<phoneme alphabet="ipa" ph="t͡ʃaːɦije">चाहिए</phoneme>')
+        .replace(/किराया/g, '<phoneme alphabet="ipa" ph="kɪɾaːjaː">किराया</phoneme>');
     }
 
     // Normalize common Hinglish to Devanagari
@@ -176,6 +201,13 @@ exports.handler = async (event, context) => {
         .replace(/\bkiraya\b/gi, 'किराया')
         .replace(/\blenge\b/gi, 'लेंगे')
         .replace(/\bchalenge\b/gi, 'चलेंगे')
+        .replace(/\bnahi\b/gi, 'नहीं')
+        .replace(/\byahan\b/gi, 'यहाँ')
+        .replace(/\bwahan\b/gi, 'वहाँ')
+        .replace(/\bthoda\b/gi, 'थोड़ा')
+        .replace(/\bzyada\b/gi, 'ज़्यादा')
+        .replace(/\bkripya\b/gi, 'कृपया')
+        .replace(/\bdhanyavaad\b/gi, 'धन्यवाद')
         .replace(/\blenge\b/gi, 'लेंगे')
         .replace(/\bchalenge\b/gi, 'चलेंगे')
         .replace(/\bhai\b/gi, 'है')
