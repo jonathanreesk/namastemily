@@ -332,21 +332,25 @@ async function loadPhrases() {
 
 async function loadStaticPhrases() {
   try {
+    console.log('Loading static phrases as fallback');
     const resp = await fetch("phrases.json");
     const staticPhrases = await resp.json();
+    console.log('Static phrases loaded:', Object.keys(staticPhrases));
     // Merge with existing phrases
     Object.keys(staticPhrases).forEach(scene => {
       if (!phrasePacks[scene] || phrasePacks[scene].length === 0) {
-        phrasePhrases[scene] = staticPhrases[scene];
+        phrasePacks[scene] = staticPhrases[scene];
+        console.log('Added static phrases for scene:', scene);
       }
     });
   } catch (e) {
-    console.warn("Could not load static phrases:", e);
+    console.error("Could not load static phrases:", e);
   }
 }
 
 async function loadAIPhrases() {
   try {
+    console.log('Loading AI phrases for scene:', sceneSel?.value);
     const userProgress = {
       scene: sceneSel?.value || 'market',
       level: levelSel?.value || 'beginner',
@@ -354,6 +358,7 @@ async function loadAIPhrases() {
       scenes: GAMIFY.state?.scenes || {}
     };
     
+    console.log('Sending request to missions API with:', userProgress);
     const resp = await fetch(`${API}/api/missions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -361,45 +366,57 @@ async function loadAIPhrases() {
     });
     
     if (!resp.ok) {
-      console.warn('AI phrase generation failed:', resp.status);
+      const errorText = await resp.text();
+      console.error('AI phrase generation failed:', resp.status, errorText);
       throw new Error('Failed to generate suggestions');
     }
     
     const suggestions = await resp.json();
-    console.log('AI suggestions received:', suggestions);
+    console.log('AI suggestions received:', JSON.stringify(suggestions, null, 2));
     
     // Convert AI suggestions to phrase pack format
     const scene = sceneSel?.value || 'market';
     if (Array.isArray(suggestions) && suggestions.length > 0) {
       phrasePacks[scene] = suggestions;
+      console.log('Successfully stored AI phrases for scene:', scene);
     } else {
-      console.warn('Invalid AI suggestions format:', suggestions);
+      console.error('Invalid AI suggestions format - not an array or empty:', suggestions);
       throw new Error('Invalid suggestions format');
     }
     
   } catch (e) {
-    console.warn('AI phrase generation failed:', e);
+    console.error('AI phrase generation failed with error:', e);
+    // Force fallback to static phrases
+    await loadStaticPhrases();
   }
 }
 function renderPhrases() {
   const scene = sceneSel.value;
   const pack = phrasePacks[scene] || [];
+  console.log('Rendering phrases for scene:', scene, 'Pack length:', pack.length);
+  console.log('Available phrase packs:', Object.keys(phrasePacks));
   phrasesBar.innerHTML = "";
   
   if (pack.length === 0) {
-    phrasesBar.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 20px;">Loading AI-generated phrases... 🤖</p>';
+    console.log('No phrases found, attempting to load AI phrases');
+    phrasesBar.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 20px;">Loading personalized phrases... 🤖</p>';
     // Try to load AI phrases for this scene
-    loadAIPhrases().then(() => {
+    setTimeout(async () => {
+      await loadAIPhrases();
       if (phrasePacks[scene]?.length > 0) {
+        console.log('AI phrases loaded successfully, re-rendering');
         renderPhrases(); // Re-render with new phrases
       } else {
+        console.log('AI phrases failed, loading static phrases');
         // Fallback to static phrases if AI fails
-        loadStaticPhrases().then(() => renderPhrases());
+        await loadStaticPhrases();
+        renderPhrases();
       }
-    });
+    }, 100);
     return;
   }
   
+  console.log('Rendering', pack.length, 'phrases');
   pack.forEach(p => {
     const b = document.createElement("button");
     b.className = "phrase-btn";
