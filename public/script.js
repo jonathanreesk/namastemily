@@ -60,7 +60,7 @@ const sceneSel = document.getElementById("scene");
 const levelSel = document.getElementById("level");
 
 let history = [
-  { role: "assistant", content: "Hi Emily! I'm Aasha Aunty, your friendly Hindi teacher. I'm here to help you learn practical Hindi phrases for your time in India. Let's start with something simple - which situation would you like to practice first? Market shopping, taking a taxi, or meeting your neighbors?" }
+  { role: "assistant", content: "Hi Emily! I'm Aasha Aunty, your friendly Hindi teacher. I speak in English to help you learn Hindi step by step. Let's start with something simple - which situation would you like to practice first? Market shopping, taking a taxi, or meeting your neighbors?" }
 ];
 
 // Initialize chat
@@ -104,6 +104,11 @@ function addMsg(role, content) {
 
 async function speakWithAzure(text) {
   try {
+    // Check if Azure credentials are available
+    if (!process.env.AZURE_SPEECH_KEY) {
+      throw new Error("Azure TTS not configured - using browser TTS");
+    }
+    
     toast("🔊 Playing audio...");
     
     const resp = await fetch(`${API}/api/tts-azure`, {
@@ -330,12 +335,12 @@ sceneSel.addEventListener("change", () => {
     let open = "Namaste! Kaise madad karun? (Hello! How can I help?)";
     
     const greetings = {
-      market: "Great choice! Let's learn essential market phrases. You'll be buying vegetables like a pro! 🥕",
-      taxi: "Perfect! Taxi phrases are super useful. Let's learn how to get around safely and politely. 🚕", 
-      rickshaw: "Excellent! Rickshaw rides are fun. Let's learn how to negotiate and be polite. 🛺",
-      neighbor: "Wonderful! Meeting neighbors is so important. Let's learn friendly greetings and introductions. 👋",
-      introductions: "Perfect choice! Introducing yourself and your family is essential. Let's practice! 🤝",
-      church: "Great! Let's learn respectful phrases for church interactions. Very meaningful! ⛪"
+      market: "Great choice! Let's learn essential market phrases. I'll teach you in English first, then we'll practice the Hindi. You'll be buying vegetables like a pro! 🥕",
+      taxi: "Perfect! Taxi phrases are super useful. I'll explain each phrase in English, then teach you the Hindi pronunciation. Let's learn how to get around safely! 🚕", 
+      rickshaw: "Excellent! Rickshaw rides are fun. I'll teach you the English meaning first, then the Hindi phrases for negotiating politely. 🛺",
+      neighbor: "Wonderful! Meeting neighbors is so important. I'll explain what to say in English, then teach you the Hindi greetings and introductions. 👋",
+      introductions: "Perfect choice! I'll help you learn how to introduce yourself and your family. English explanations first, then Hindi practice! 🤝",
+      church: "Great! I'll teach you respectful phrases for church interactions. English context first, then meaningful Hindi phrases! ⛪"
     };
     
     open = greetings[s] || "Hi Emily! I'm here to help you learn Hindi. Which situation would you like to practice?";
