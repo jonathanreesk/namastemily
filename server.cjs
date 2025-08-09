@@ -35,7 +35,7 @@ const server = http.createServer((req, res) => {
   filePath = filePath.split('?')[0];
   
   // Serve from public directory
-  const fullPath = path.join(__dirname, 'public', filePath);
+  const fullPath = path.join(__dirname, filePath);
   
   // Get file extension
   const ext = path.extname(filePath).toLowerCase();
