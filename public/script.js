@@ -354,14 +354,18 @@ async function loadStaticPhrases() {
 async function loadAIPhrases() {
   try {
     console.log('Loading AI phrases for scene:', sceneSel?.value);
+    const currentScene = sceneSel?.value || 'market';
+    const currentLevel = levelSel?.value || 'beginner';
+    
     const userProgress = {
-      scene: sceneSel?.value || 'market',
-      level: levelSel?.value || 'beginner',
+      scene: currentScene,
+      level: currentLevel,
       xp: GAMIFY.state?.xp || 0,
-      scenes: GAMIFY.state?.scenes || {}
+      scenes: GAMIFY.state?.scenes || {},
+      phrasesTapped: GAMIFY.state?.phrasesTapped || 0
     };
     
-    console.log('Sending request to missions API with:', userProgress);
+    console.log(`Generating AI phrases for ${currentScene} scene at ${currentLevel} level`);
     const resp = await fetch(`${API}/api/missions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -378,10 +382,10 @@ async function loadAIPhrases() {
     console.log('AI suggestions received:', JSON.stringify(suggestions, null, 2));
     
     // Convert AI suggestions to phrase pack format
-    const scene = sceneSel?.value || 'market';
+    const scene = currentScene;
     if (Array.isArray(suggestions) && suggestions.length > 0) {
       phrasePacks[scene] = suggestions;
-      console.log('Successfully stored AI phrases for scene:', scene);
+      console.log(`Successfully stored ${suggestions.length} AI phrases for ${scene} scene`);
     } else {
       console.error('Invalid AI suggestions format - not an array or empty:', suggestions);
       throw new Error('Invalid suggestions format');
@@ -470,7 +474,21 @@ function renderPhrases() {
 }
 
 sceneSel.addEventListener("change", () => {
+  console.log(`Scene changed to: ${sceneSel.value}`);
+  
+  // Clear existing phrases to force reload for new scene
+  const currentScene = sceneSel.value;
+  if (phrasePacks[currentScene]) {
+    console.log(`Using cached phrases for ${currentScene}`);
+  } else {
+    console.log(`Loading new phrases for ${currentScene}`);
+    phrasePacks[currentScene] = []; // Clear to force reload
+  }
+  
   renderPhrases();
+  
+  // Also regenerate mission for new scene
+  MISSIONS.render();
   
   // Update greeting based on scene
   if (history.length <= 1) {
@@ -633,13 +651,20 @@ const MISSIONS = {
   
   async generateDaily() {
     try {
+      const currentScene = sceneSel?.value || 'market';
+      const currentLevel = levelSel?.value || 'beginner';
+      
       const userProgress = {
+        scene: currentScene,
+        level: currentLevel,
         xp: GAMIFY.state?.xp || 0,
         scenes: GAMIFY.state?.scenes || {},
         streak: GAMIFY.state?.streak || 0,
-        completedToday: GAMIFY.state?.missionCompletedToday || false
+        completedToday: GAMIFY.state?.missionCompletedToday || false,
+        phrasesTapped: GAMIFY.state?.phrasesTapped || 0
       };
       
+      console.log(`Generating daily mission for ${currentScene} scene at ${currentLevel} level`);
       const resp = await fetch(`${API}/api/missions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
