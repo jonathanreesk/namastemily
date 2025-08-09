@@ -129,12 +129,21 @@ async function speakWithAzure(text) {
     });
     
     if (!resp.ok) {
-      const errorText = await resp.text();
+      let errorText;
+      try {
+        errorText = await resp.text();
+      } catch (e) {
+        errorText = `HTTP ${resp.status}`;
+      }
       console.error('Speech API error:', resp.status, errorText);
-      throw new Error(`Speech API failed: ${errorText}`);
+      throw new Error(`Speech API failed: ${resp.status} - ${errorText}`);
     }
     
     const blob = await resp.blob();
+    if (blob.size === 0) {
+      throw new Error("Empty audio response");
+    }
+    
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     
@@ -154,8 +163,7 @@ async function speakWithAzure(text) {
     
   } catch (e) {
     console.error('Speech API failed, falling back to browser TTS:', e);
-    console.log('Error details:', e.message);
-    toast("Using browser voice...");
+    toast(`Azure TTS failed (${e.message}), using browser voice...`);
     
     // Fallback to browser TTS if Azure TTS fails
     if ("speechSynthesis" in window) {
