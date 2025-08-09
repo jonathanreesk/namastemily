@@ -108,6 +108,7 @@ let history = [
 render();
 
 function addMsg(role, content) {
+  console.log('Adding message:', role, content.substring(0, 50) + '...');
   history.push({ role, content });
   const div = document.createElement("div");
   div.className = `msg ${role}`;
@@ -131,6 +132,7 @@ function addMsg(role, content) {
   
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
+  console.log('Message added to chat, total messages:', history.length);
 }
 
 async function speakWithAzure(text) {
@@ -442,6 +444,7 @@ function renderPhrases() {
   `;
   
   moreBtn.addEventListener("click", async () => {
+    console.log('More phrases button clicked');
     moreBtn.disabled = true;
     moreBtn.textContent = "🔄 Loading...";
     moreBtn.style.opacity = "0.7";
@@ -449,6 +452,7 @@ function renderPhrases() {
     try {
       // Clear current phrases to force fresh generation
       delete phrasePacks[scene];
+      console.log('Cleared phrases for scene:', scene);
       await loadAIPhrases();
       renderPhrases();
       toast("🎉 Fresh phrases loaded for " + scene + "!");
@@ -460,6 +464,15 @@ function renderPhrases() {
       moreBtn.disabled = false;
       moreBtn.textContent = "🔄 More Phrases";
       moreBtn.style.opacity = "1";
+    }
+  });
+  
+  // Add mobile touch support for More Phrases button
+  moreBtn.addEventListener("touchend", (e) => {
+    e.preventDefault();
+    console.log('Mobile tap on More Phrases button');
+    if (!moreBtn.disabled) {
+      moreBtn.click();
     }
   });
   
@@ -526,34 +539,57 @@ function renderPhrases() {
       const hindiPhrase = p.hindiPhrase || p.hi;
       const pronunciation = p.pronunciation || p.tr;
       
-      // Add the phrase lesson to chat
-      const lessonMessage = `${englishIntro} The Hindi is: ${hindiPhrase}${pronunciation ? ` (${pronunciation})` : ''}`;
-      addMsg("user", `Teach me: "${p.englishMeaning || p.en || p.englishIntro}"`);
+      console.log('Phrase button clicked:', p);
       
-      // Auto-respond from Asha with the lesson
-      setTimeout(() => {
-        addMsg("assistant", lessonMessage);
-        setTimeout(() => speak(lessonMessage), 300);
-      }, 500);
-      
-      // Also put the pronunciation in the input for practice
-      setTimeout(() => {
-        input.value = pronunciation || hindiPhrase;
-      }, 1000);
+      try {
+        // Add the phrase lesson to chat
+        const lessonMessage = `${englishIntro} The Hindi is: ${hindiPhrase}${pronunciation ? ` (${pronunciation})` : ''}`;
+        const userMessage = `Teach me: "${p.englishMeaning || p.en || p.englishIntro}"`;
+        
+        console.log('Adding user message:', userMessage);
+        addMsg("user", userMessage);
+        
+        // Auto-respond from Asha with the lesson
+        setTimeout(() => {
+          console.log('Adding assistant message:', lessonMessage);
+          addMsg("assistant", lessonMessage);
+          setTimeout(() => speak(lessonMessage), 300);
+        }, 500);
+        
+        // Also put the pronunciation in the input for practice
+        setTimeout(() => {
+          input.value = pronunciation || hindiPhrase;
+          console.log('Added to input:', pronunciation || hindiPhrase);
+        }, 1000);
+        
+        toast("Phrase added to conversation! Practice saying it 🗣️");
+      } catch (error) {
+        console.error('Error handling phrase click:', error);
+        toast("Something went wrong with the phrase. Try again! 🔄");
+      }
       
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
-      toast("Phrase added to conversation! Practice saying it 🗣️");
     });
-    // Add touch event for better mobile response
+    
+    // Add proper mobile touch events
     b.addEventListener("touchstart", (e) => {
-      e.preventDefault();
+      console.log('Touch start on phrase button');
       b.style.transform = "scale(0.95)";
-    });
+    }, { passive: true });
+    
+    b.addEventListener("touchend", (e) => {
+      console.log('Touch end on phrase button');
+      b.style.transform = "scale(1)";
+    }, { passive: true });
+    
+    // Ensure mobile tap works
     b.addEventListener("touchend", (e) => {
       e.preventDefault();
-      b.style.transform = "scale(1)";
+      console.log('Mobile tap detected, triggering click');
+      b.click();
     });
+    
     phrasesContainer.appendChild(b);
   });
   

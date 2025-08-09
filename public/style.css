@@ -274,12 +274,19 @@ header {
   color: var(--gray-800);
   cursor: pointer;
   transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .phrases button:hover {
   background: var(--primary-50);
   border-color: var(--primary-600);
   color: var(--primary-700);
+}
+
+.phrases button:active {
+  transform: scale(0.95);
+  background: var(--primary-100);
 }
 
 .more-phrases-btn:hover {
@@ -295,6 +302,20 @@ header {
   opacity: 0.7 !important;
   cursor: not-allowed !important;
   transform: none !important;
+}
+
+/* Better mobile button styling */
+@media (max-width: 768px) {
+  .phrases button {
+    min-height: 48px;
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-base);
+  }
+  
+  .more-phrases-btn {
+    min-height: 48px;
+    padding: var(--space-3) var(--space-4);
+  }
 }
 
 /* Chat */
