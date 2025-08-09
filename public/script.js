@@ -632,13 +632,18 @@ sceneSel.addEventListener("change", () => {
         });
         
         if (resp.ok) {
+          const data = await resp.json();
+          const reply = data.reply || "Let me help you practice that scene!";
+          addMsg("assistant", reply);
+          setTimeout(() => speak(reply), 500);
         }
+      } catch (e) {
+        console.error('Scene change greeting failed:', e);
+        const fallbackReply = `Great choice! Let's practice the ${s} scene. I'll help you learn the essential phrases step by step.`;
+        addMsg("assistant", fallbackReply);
+        setTimeout(() => speak(fallbackReply), 500);
       }
-    }
-    )
-    setTimeout(() => {
-      speak(reply);
-    }, 500);
+    }, 1000);
   }
 });
 
