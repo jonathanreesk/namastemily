@@ -354,7 +354,6 @@ function renderPhrases() {
   
   pack.forEach(p => {
     const b = document.createElement("button");
-    b.textContent = p.hi;
     b.title = `${p.en} (${p.tr})`;
     b.style.cursor = "pointer";
     b.setAttribute("ontouchstart", ""); // Enable :active on iOS

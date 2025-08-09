@@ -669,7 +669,7 @@ function render() {
     chat.appendChild(div);
   });
   
-  chat.scrollTop = chat\.scrollHeight;
+  chat.scrollTop = chat.scrollHeight;
 }
 
 function speak(text) {
