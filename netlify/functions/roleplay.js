@@ -1,3 +1,6 @@
+const { readFileSync } = require('fs');
+const path = require('path');
+
 exports.handler = async (event, context) => {
   // Handle CORS
   const headers = {
@@ -25,11 +28,12 @@ exports.handler = async (event, context) => {
   try {
     const { history = [], scene = "market", level = "beginner" } = JSON.parse(event.body || '{}');
 
-    const { readFile } = await import('fs/promises');
-    const path = await import('path');
+    // Read files from the correct location in Netlify
+    const scenesPath = path.join(process.cwd(), 'server', 'scenes.json');
+    const personaPath = path.join(process.cwd(), 'server', 'persona.txt');
     
-    const scenes = JSON.parse(await readFile(path.join(__dirname, 'scenes.json'), 'utf8'));
-    const persona = await readFile(path.join(__dirname, 'persona.txt'), 'utf8');
+    const scenes = JSON.parse(readFileSync(scenesPath, 'utf8'));
+    const persona = readFileSync(personaPath, 'utf8');
 
     const scenePersona = scenes[scene] || scenes.market;
     const system = [
@@ -44,13 +48,16 @@ exports.handler = async (event, context) => {
       ...history
     ];
 
-    const { default: OpenAI } = await import('openai');
+    // Use dynamic import for OpenAI
+    const { OpenAI } = await import('openai');
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
     const resp = await client.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.6,
       messages
     });
+    
     const reply = resp.choices?.[0]?.message?.content || "Namaste, Emily! Kaise madad karun? (How can I help?)";
 
     return {
@@ -59,11 +66,15 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({ reply })
     };
   } catch (e) {
-    console.error(e);
+    console.error('Roleplay function error:', e);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: "roleplay_failed", details: e.message })
+      body: JSON.stringify({ 
+        error: "roleplay_failed", 
+        details: e.message,
+        stack: e.stack 
+      })
     };
   }
 };
