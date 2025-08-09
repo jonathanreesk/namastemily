@@ -740,3 +740,4 @@ function speak(text) {
   });
   
   chat.scrollTop = chat.scrollHeight;
+}
