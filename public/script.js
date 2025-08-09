@@ -45,22 +45,26 @@ function addMsg(role, content) {
 
 async function speakWithAzure(text) {
   try {
-    toast("🔊 Generating Delhi-style Hindi voice...");
+    toast("🔊 Generating Delhi-style Hindi voice with Azure...");
     
-    const resp = await fetch(`${API}/api/tts`, {
+    const resp = await fetch(`${API}/api/tts-azure`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, slow: true })
     });
     
-    if (!resp.ok) throw new Error("TTS failed");
+    if (!resp.ok) {
+      const errorText = await resp.text();
+      console.error('Azure TTS error:', errorText);
+      throw new Error(`Azure TTS failed: ${errorText}`);
+    }
     
     const blob = await resp.blob();
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     
     audio.onplay = () => {
-      toast("🔊 Aasha Aunty speaking in Delhi Hindi...");
+      toast("🔊 Aasha Aunty speaking in Delhi Hindi via Azure...");
     };
     
     audio.onended = () => {
@@ -74,8 +78,8 @@ async function speakWithAzure(text) {
     await audio.play();
     
   } catch (e) {
-    console.warn('Azure TTS failed, falling back to browser TTS:', e);
-    toast("Falling back to browser voice...");
+    console.error('Azure TTS failed, falling back to browser TTS:', e);
+    toast("Azure TTS failed, using browser voice...");
     
     // Fallback to browser TTS if Azure TTS fails
     if ("speechSynthesis" in window) {
