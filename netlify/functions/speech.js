@@ -127,7 +127,7 @@ exports.handler = async (event, context) => {
         .replace(/में/g, '<phoneme alphabet="ipa" ph="meː̃">में</phoneme>')
         
         // copula / auxiliaries / negation / deictics
-        .replace(/हूँ/g, '<phoneme alphabet="ipa" ph="huː̃">हूँ</phoneme>')
+        .replace(/हूँ/g, '<phoneme alphabet="ipa" ph="hũː">हूँ</phoneme>')
         .replace(/हैं/g, '<phoneme alphabet="ipa" ph="hɛ̃">हैं</phoneme>')
         .replace(/नहीं/g, '<phoneme alphabet="ipa" ph="nəɦĩː">नहीं</phoneme>')
         .replace(/कहाँ/g, '<phoneme alphabet="ipa" ph="kəɦãː">कहाँ</phoneme>')
