@@ -104,7 +104,7 @@ function addMsg(role, content) {
 
 async function speakWithAzure(text) {
   try {
-    toast("🔊 Generating authentic Delhi Hindi with phoneme corrections...");
+    toast("🔊 Playing audio...");
     
     const resp = await fetch(`${API}/api/tts-azure`, {
       method: "POST",
@@ -123,7 +123,7 @@ async function speakWithAzure(text) {
     const audio = new Audio(url);
     
     audio.onplay = () => {
-      toast("🔊 Aasha Aunty speaking with proper मैं/में pronunciation!");
+      toast("🔊 Playing Hindi audio!");
     };
     
     audio.onended = () => {
@@ -138,7 +138,7 @@ async function speakWithAzure(text) {
     
   } catch (e) {
     console.error('Azure TTS failed, falling back to browser TTS:', e);
-    toast("Azure TTS failed, using browser voice...");
+    toast("Using browser voice...");
     
     // Fallback to browser TTS if Azure TTS fails
     if ("speechSynthesis" in window) {
