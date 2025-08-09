@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "http-server public -p 3000 -c-1",
+    "dev": "netlify dev",
     "build": "echo 'No build step required - serving static files directly'"
   },
   "dependencies": {
