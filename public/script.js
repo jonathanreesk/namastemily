@@ -26,7 +26,8 @@ function addMsg(role, content) {
     div.innerHTML = `
       <div class="msg-header">
         <strong>${prefix.split(':')[0]}:</strong>
-        <button class="listen-btn" onclick="speak('${content.replace(/'/g, "\\'")}')">
+        <button class="listen-btn" onclick="speak('${content.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
+                ontouchstart="" style="cursor: pointer;">
           <span>🔊</span>
         </button>
       </div>
@@ -69,10 +70,17 @@ function speak(text) {
     u.voice = hindiVoice;
   }
   
+  // Add error handling for mobile
+  u.onerror = (e) => {
+    console.warn('Speech synthesis error:', e);
+    toast("Audio not available on this device 📱");
+  };
+
+  u.onstart = () => {
+    toast("🔊 Playing Hindi audio...");
+  };
+
   window.speechSynthesis.speak(u);
-  
-  // Visual feedback
-  toast("🔊 Playing Hindi audio...");
 }
 
 async function send() {
@@ -258,12 +266,23 @@ function renderPhrases() {
     const b = document.createElement("button");
     b.textContent = p.hi;
     b.title = `${p.en} (${p.tr})`;
+    b.style.cursor = "pointer";
+    b.setAttribute("ontouchstart", ""); // Enable :active on iOS
     b.addEventListener("click", () => {
       input.value = p.tr;
       speak(p.hi); // Speak the Hindi phrase when clicked
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
       toast("Phrase added! Try saying it out loud 🗣️");
+    });
+    // Add touch event for better mobile response
+    b.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      b.style.transform = "scale(0.95)";
+    });
+    b.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      b.style.transform = "scale(1)";
     });
     phrasesBar.appendChild(b);
   });
@@ -500,7 +519,19 @@ window.addEventListener("load", () => {
     speechSynthesis.getVoices();
     speechSynthesis.onvoiceschanged = () => {
       speechSynthesis.getVoices();
+      console.log('Available voices:', speechSynthesis.getVoices().map(v => v.name + ' (' + v.lang + ')'));
     };
+    
+    // Force voice loading on mobile
+    setTimeout(() => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length === 0) {
+        // Trigger voice loading on mobile
+        const utterance = new SpeechSynthesisUtterance('');
+        speechSynthesis.speak(utterance);
+        speechSynthesis.cancel();
+      }
+    }, 100);
   }
   
   GAMIFY.init();
