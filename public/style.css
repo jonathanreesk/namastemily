@@ -379,6 +379,9 @@ input:checked + .slider:before {
 
 .msg-content {
   margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-style: italic;
+  opacity: 0.95;
 }
 
 .listen-btn {

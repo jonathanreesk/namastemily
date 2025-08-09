@@ -1,5 +1,57 @@
 const API = location.origin.replace(/\/$/, "");
 
+// Hindi to Latin transliteration mapping
+const TRANSLITERATION_MAP = {
+  // Vowels
+  'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ii', 'उ': 'u', 'ऊ': 'uu',
+  'ऋ': 'ri', 'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au',
+  
+  // Consonants
+  'क': 'ka', 'ख': 'kha', 'ग': 'ga', 'घ': 'gha', 'ङ': 'nga',
+  'च': 'cha', 'छ': 'chha', 'ज': 'ja', 'झ': 'jha', 'ञ': 'nya',
+  'ट': 'ta', 'ठ': 'tha', 'ड': 'da', 'ढ': 'dha', 'ण': 'na',
+  'त': 'ta', 'थ': 'tha', 'द': 'da', 'ध': 'dha', 'न': 'na',
+  'प': 'pa', 'फ': 'pha', 'ब': 'ba', 'भ': 'bha', 'म': 'ma',
+  'य': 'ya', 'र': 'ra', 'ल': 'la', 'व': 'va',
+  'श': 'sha', 'ष': 'sha', 'स': 'sa', 'ह': 'ha',
+  
+  // Vowel marks
+  'ा': 'aa', 'ि': 'i', 'ी': 'ii', 'ु': 'u', 'ू': 'uu',
+  'ृ': 'ri', 'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au',
+  
+  // Special characters
+  'ं': 'n', 'ँ': 'n', 'ः': 'h', '्': '', 'ऽ': "'",
+  
+  // Numbers
+  '०': '0', '१': '1', '२': '2', '३': '3', '४': '4',
+  '५': '5', '६': '6', '७': '7', '८': '8', '९': '9'
+};
+
+function transliterateHindi(text) {
+  if (!text || typeof text !== 'string') return text;
+  
+  // Check if text contains Hindi characters
+  if (!/[\u0900-\u097F]/.test(text)) return text;
+  
+  let result = '';
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    
+    // If it's a Hindi character, transliterate it
+    if (TRANSLITERATION_MAP[char]) {
+      result += TRANSLITERATION_MAP[char];
+    } else if (char >= '\u0900' && char <= '\u097F') {
+      // Unknown Devanagari character, keep as is
+      result += char;
+    } else {
+      // Non-Hindi character (space, punctuation, English), keep as is
+      result += char;
+    }
+  }
+  
+  return result;
+}
+
 const chat = document.getElementById("chat");
 const input = document.getElementById("input");
 const sendBtn = document.getElementById("sendBtn");
