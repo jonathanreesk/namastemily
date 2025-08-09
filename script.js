@@ -398,6 +398,8 @@ function renderPhrases() {
     b.setAttribute("ontouchstart", ""); // Enable :active on iOS
     b.addEventListener("click", () => {
       input.value = p.tr;
+      // Stop any audio before speaking the phrase
+      stopAllAudio();
       speak(p.hi); // Speak the Hindi phrase when clicked
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
