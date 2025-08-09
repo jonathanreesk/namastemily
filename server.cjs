@@ -18,6 +18,9 @@ const mimeTypes = {
 };
 
 const server = http.createServer((req, res) => {
+  console.log('Request URL:', req.url);
+  console.log('Current directory:', __dirname);
+  
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -29,13 +32,15 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  let filePath = req.url === '/' ? '/index.html' : req.url;
+  // Handle root path
+  let filePath = req.url === '/' ? 'index.html' : req.url.substring(1);
   
   // Remove query parameters
   filePath = filePath.split('?')[0];
   
-  // Serve from root directory
-  const fullPath = path.join(__dirname, filePath.slice(1));
+  // Build full path
+  const fullPath = path.join(__dirname, filePath);
+  console.log('Trying to serve file:', fullPath);
   
   // Get file extension
   const ext = path.extname(filePath).toLowerCase();
@@ -44,15 +49,25 @@ const server = http.createServer((req, res) => {
   // Check if file exists
   fs.access(fullPath, fs.constants.F_OK, (err) => {
     if (err) {
-      // File not found
+      console.log('File not found:', fullPath);
+      // List files in directory for debugging
+      fs.readdir(__dirname, (err, files) => {
+        if (!err) {
+          console.log('Available files:', files);
+        }
+      });
+      
       res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('File not found');
+      res.end('File not found: ' + filePath);
       return;
     }
 
+    console.log('File found, serving:', fullPath);
+    
     // Read and serve the file
     fs.readFile(fullPath, (err, data) => {
       if (err) {
+        console.log('Error reading file:', err);
         res.writeHead(500, { 'Content-Type': 'text/plain' });
         res.end('Server error');
         return;
@@ -67,6 +82,13 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
   console.log('Hindi learning app is ready!');
+  
+  // List files in current directory for debugging
+  fs.readdir(__dirname, (err, files) => {
+    if (!err) {
+      console.log('Files in current directory:', files);
+    }
+  });
 });
 
 server.on('error', (err) => {
