@@ -1,0 +1,17 @@
+# Node / build
+node_modules/
+npm-debug.log*
+.yarn/*
+.pnpm-store/
+dist/
+.build/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Env
+.env
+.env.*

@@ -1,0 +1,40 @@
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#faf9f7;color:#222}
+.container{max-width:920px;margin:0 auto;padding:20px}
+header h1{margin:0;font-size:28px}
+header span{font-weight:400;color:#7a5}
+.tag{margin:4px 0 16px;color:#555}
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:12px}
+.controls label{font-size:14px}
+.toggle{margin-left:auto}
+.chat{background:#fff;border:1px solid #eee;border-radius:12px;padding:12px;height:50vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.msg{padding:10px 12px;border-radius:10px;max-width:80%}
+.msg.assistant{background:#f1f8f2;border:1px solid #dceedd;align-self:flex-start}
+.msg.user{background:#eef2ff;border:1px solid #dbe1ff;align-self:flex-end}
+.composer{display:flex;gap:10px;margin-top:12px}
+#input{flex:1;min-height:56px;padding:10px;border-radius:10px;border:1px solid #ddd}
+.actions{display:flex;gap:10px}
+button{border:1px solid #ccc;background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer}
+button.primary{background:#275d38;color:#fff;border:0}
+footer{margin-top:10px;color:#666}
+
+.phrases{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.phrases button{font-size:13px;padding:6px 10px;border-radius:8px;background:#fff;border:1px solid #ddd}
+
+
+/* HUD */
+.hud{display:flex;gap:12px;justify-content:flex-end;align-items:center;margin-top:8px;color:#333;font-size:14px;flex-wrap:wrap}
+.hud-item{background:#fff;border:1px solid #eee;border-radius:10px;padding:6px 10px}
+
+/* Mission bar */
+.mission{display:flex;gap:10px;align-items:center;background:#fff;border:1px dashed #cfe3d1;border-radius:12px;padding:10px;margin-bottom:10px}
+.mission .tiny{font-size:12px;padding:6px 8px;border-radius:8px}
+
+/* Badges */
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 8px;border-radius:999px;border:1px solid #eee;background:#fff;font-size:13px}
+.badge .emo{font-size:16px}
+
+/* Confetti */
+.confetti{position:fixed;top:0;left:0;pointer-events:none;width:100vw;height:0;z-index:999}
+.confetti span{position:absolute;animation:fall 1.5s linear forwards;opacity:0.9}
+@keyframes fall{to{transform:translateY(90vh) rotate(540deg);opacity:0}}

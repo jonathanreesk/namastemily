@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Namaste, Emily — Pilot</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="hud">
+        <div class="hud-item">🔥 Streak: <span id="streak">0</span></div>
+        <div class="hud-item">⭐ XP: <span id="xp">0</span></div>
+        <div class="hud-item">☕ Chai: <span id="chai">0</span></div>
+      </div>
+      <h1>Namaste, Emily <span>— Live Pilot</span></h1>
+      <p class="tag">Friendly Hindi practice with Asha Aunty.</p>
+    </header>
+
+    <section id="missionBar" class="mission"><strong>Mission of the Day:</strong> <span id="missionText"></span> <button id="missionDone" class="tiny">Mark done</button></section>
+
+    <section class="controls">
+      <label>Scene:
+        <select id="scene">
+          <option value="market">Market</option>
+          <option value="taxi">Taxi</option>
+          <option value="neighbor">Neighbor</option>
+          <option value="introductions">Introductions</option>
+          <option value="church">Church</option>
+          <option value="rickshaw">Rickshaw</option>
+        </select>
+      </label>
+      <label>Level:
+        <select id="level">
+          <option value="beginner">Beginner</option>
+          <option value="intermediate">Intermediate</option>
+        </select>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="useServerSTT" />
+        Use Server STT (Whisper)
+      </label>
+    </section>
+
+    <div id="phrasesBar" class="phrases"></div>
+
+    <section id="chat" class="chat"></section>
+
+    <section class="composer">
+      <textarea id="input" placeholder="Type in English/Hinglish/Hindi..."></textarea>
+      <div class="actions">
+        <button id="micBtn">🎤 Speak</button>
+        <button id="sendBtn" class="primary">Send</button>
+      </div>
+    </section>
+
+    <section id="badgesBar" class="badges"></section>
+
+    <footer>
+      <small>Tip: Speak short sentences. Asha will reply with Hindi + transliteration + English.</small>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

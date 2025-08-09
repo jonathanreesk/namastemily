@@ -1,0 +1,129 @@
+{
+  "market": [
+    {
+      "hi": "Mujhe tamatar aur aalu chahiye.",
+      "en": "I want tomatoes and potatoes.",
+      "tr": "Mujhe tamatar aur aalu chahiye."
+    },
+    {
+      "hi": "Daam kya hai?",
+      "en": "What is the price?",
+      "tr": "Daam kya hai?"
+    },
+    {
+      "hi": "Thoda sasta kijiye, kripya.",
+      "en": "Please make it a bit cheaper.",
+      "tr": "Thoda sasta kijiye, kripya."
+    }
+  ],
+  "taxi": [
+    {
+      "hi": "Mujhe bazaar tak chalna hai.",
+      "en": "I need to go to the market.",
+      "tr": "Mujhe bazaar tak chalna hai."
+    },
+    {
+      "hi": "Kitna kiraya hoga?",
+      "en": "How much will the fare be?",
+      "tr": "Kitna kiraya hoga?"
+    },
+    {
+      "hi": "Zara dheere chalenge?",
+      "en": "Could you drive a little slower?",
+      "tr": "Zara dheere chalenge?"
+    }
+  ],
+  "rickshaw": [
+    {
+      "hi": "Station tak chaloge?",
+      "en": "Will you go to the station?",
+      "tr": "Station tak chaloge?"
+    },
+    {
+      "hi": "Pachaas theek hoga?",
+      "en": "Is 50 okay?",
+      "tr": "Pachaas theek hoga?"
+    },
+    {
+      "hi": "Thoda kam kijiye, kripya.",
+      "en": "Please reduce a little.",
+      "tr": "Thoda kam kijiye, kripya."
+    },
+    {
+      "hi": "Meter se chalenge?",
+      "en": "Will you go by the meter?",
+      "tr": "Meter se chalenge?"
+    }
+  ],
+  "neighbor": [
+    {
+      "hi": "Namaste, main Emily hoon.",
+      "en": "Hello, I’m Emily.",
+      "tr": "Namaste, main Emily hoon."
+    },
+    {
+      "hi": "Yeh meri beti Sophia hai.",
+      "en": "This is my daughter, Sophia.",
+      "tr": "Yeh meri beti Sophia hai."
+    },
+    {
+      "hi": "Aap se milkar khushi hui.",
+      "en": "Nice to meet you.",
+      "tr": "Aap se milkar khushi hui."
+    },
+    {
+      "hi": "Aap yahan kab se rehte hain?",
+      "en": "Since when have you been living here?",
+      "tr": "Aap yahan kab se rehte hain?"
+    }
+  ],
+  "introductions": [
+    {
+      "hi": "Hum Minneapolis, America se hain.",
+      "en": "We’re from Minneapolis, USA.",
+      "tr": "Hum Minneapolis, America se hain."
+    },
+    {
+      "hi": "Hum yahan chhe mahine rehte hain.",
+      "en": "We live here for six months.",
+      "tr": "Hum yahan chhe mahine rehte hain."
+    },
+    {
+      "hi": "Kal milte hain?",
+      "en": "Shall we meet tomorrow?",
+      "tr": "Kal milte hain?"
+    },
+    {
+      "hi": "Yeh mere pati Jonathan hain.",
+      "en": "This is my husband, Jonathan.",
+      "tr": "Yeh mere pati Jonathan hain."
+    },
+    {
+      "hi": "Yeh meri beti Sophia hai.",
+      "en": "This is my daughter, Sophia.",
+      "tr": "Yeh meri beti Sophia hai."
+    }
+  ],
+  "church": [
+    {
+      "hi": "Yeshu mein shanti mile.",
+      "en": "May you find peace in Jesus.",
+      "tr": "Yeshu mein shanti mile."
+    },
+    {
+      "hi": "Aap kaisi hain, Aunty?",
+      "en": "How are you, Aunty?",
+      "tr": "Aap kaisi hain, Aunty?"
+    },
+    {
+      "hi": "Prarthana ke liye dhanyavaad.",
+      "en": "Thank you for the prayer.",
+      "tr": "Prarthana ke liye dhanyavaad."
+    },
+    {
+      "hi": "Prabhu aapko aashish de.",
+      "en": "May the Lord bless you.",
+      "tr": "Prabhu aapko aashish de."
+    }
+  ]
+}
