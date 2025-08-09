@@ -355,8 +355,6 @@ function renderPhrases() {
   
   pack.forEach(p => {
     const b = document.createElement("button");
-    b.textContent = p.hi;
-    b.title = \`${p.en} (${p.tr})`;
     b.title = `${p.en} (${p.tr})`;
     b.style.cursor = "pointer";
     b.setAttribute("ontouchstart", ""); // Enable :active on iOS
@@ -640,7 +638,7 @@ function render() {
   chat.innerHTML = "";
   history.forEach(m => {
     const div = document.createElement("div");
-    div.className = \`msg ${m.role}`;
+    div.className = `msg ${m.role}`;
     
     // Store original for TTS, transliterate for display
     const originalContent = m.content;
