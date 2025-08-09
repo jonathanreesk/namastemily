@@ -654,9 +654,9 @@ const MISSIONS = {
     ];
     
     const mission = fallbackMissions[Math.floor(Math.random() * fallbackMissions.length)];
-    state.dailyMission = mission;
-    state.lastMissionDate = new Date().toDateString();
-    saveState();
+    GAMIFY.state.dailyMission = mission;
+    GAMIFY.state.lastMissionDate = new Date().toDateString();
+    GAMIFY.save(GAMIFY.state);
     return mission;
   },
   
