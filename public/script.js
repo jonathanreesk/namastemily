@@ -11,13 +11,18 @@ const useServerSTT = document.getElementById("useServerSTT");
 let history = [
   { role: "assistant", content: "Namaste Emily ji! Main Asha Aunty hoon. Aaj hum chhota sa jeet lenge—market, rickshaw ya church? (Hello Emily! I'm Asha Aunty. Shall we aim for one small win—market, rickshaw or church?)" }
 ];
+
+// Initialize chat
 render();
 
 function addMsg(role, content) {
   history.push({ role, content });
   const div = document.createElement("div");
   div.className = `msg ${role}`;
-  div.textContent = (role === "assistant" ? "Asha Aunty: " : "You: ") + content;
+  
+  const prefix = role === "assistant" ? "Asha Aunty: " : "You: ";
+  div.innerHTML = `<strong>${prefix.split(':')[0]}:</strong> ${content}`;
+  
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
 }
@@ -31,6 +36,8 @@ function speak(text) {
   if (!("speechSynthesis" in window)) return;
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "hi-IN";
+  u.rate = 0.8;
+  u.pitch = 1.1;
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(u);
 }
@@ -38,6 +45,11 @@ function speak(text) {
 async function send() {
   const text = input.value.trim();
   if (!text) return;
+  
+  // Add loading state
+  sendBtn.classList.add('loading');
+  sendBtn.disabled = true;
+  
   addMsg("user", text);
   input.value = "";
 
@@ -51,17 +63,31 @@ async function send() {
         level: levelSel.value
       })
     });
+    
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}`);
+    }
+    
     const data = await resp.json();
     addMsg("assistant", data.reply);
     speak(data.reply);
+    
+    // Award XP and update gamification
+    GAMIFY.awardXP(5);
+    GAMIFY.touchScene(sceneSel.value);
+    
   } catch (e) {
-    addMsg("assistant", "Network error — please try again.");
+    console.error('Send error:', e);
+    addMsg("assistant", "Sorry, I'm having trouble connecting right now. Please check that your API key is set up correctly and try again. 🔧");
+  } finally {
+    sendBtn.classList.remove('loading');
+    sendBtn.disabled = false;
   }
 }
 
 sendBtn.addEventListener("click", send);
 input.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && (e.metaKey || e.ctrlKey || !e.shiftKey)) {
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey || (!e.shiftKey && window.innerWidth > 768))) {
     e.preventDefault();
     send();
   }
@@ -71,6 +97,7 @@ input.addEventListener("keydown", (e) => {
 let rec;
 let chunks = [];
 let recognizing = false;
+
 micBtn.addEventListener("click", async () => {
   if (useServerSTT.checked) {
     await recordAndSendToServer();
@@ -82,57 +109,93 @@ micBtn.addEventListener("click", async () => {
 function webSpeechDictation() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    alert("Browser STT not supported. Toggle 'Use Server STT' to use Whisper.");
+    toast("Browser speech recognition not supported. Try enabling 'Server STT' for better Hindi recognition! 🎤");
     return;
   }
+  
   const recog = new SpeechRecognition();
   recog.lang = "hi-IN";
   recog.interimResults = false;
   recog.maxAlternatives = 1;
+  
+  micBtn.classList.add('loading');
+  micBtn.textContent = "🎙️ Listening...";
+  
   recog.onresult = (e) => {
     const text = e.results[0][0].transcript;
     input.value = text;
+    GAMIFY.awardXP(3);
+    toast("Great! I heard: " + text + " 🎉");
   };
-  recog.onerror = (e) => console.log("stt error", e);
+  
+  recog.onerror = (e) => {
+    console.log("Speech recognition error:", e);
+    toast("Couldn't catch that. Try speaking a bit louder! 🔊");
+  };
+  
+  recog.onend = () => {
+    micBtn.classList.remove('loading');
+    micBtn.innerHTML = '<span>🎤</span><span>Speak</span>';
+  };
+  
   recog.start();
 }
 
-// Whisper server recording
 async function recordAndSendToServer() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    alert("Microphone not available.");
+    toast("Microphone access not available 🎤");
     return;
   }
+  
   if (!recognizing) {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mediaRecorder = new MediaRecorder(stream);
-    rec = mediaRecorder;
-    chunks = [];
-    mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-    mediaRecorder.onstop = async () => {
-      const blob = new Blob(chunks, { type: "audio/webm" });
-      const fd = new FormData();
-      fd.append("audio", blob, "audio.webm");
-      try {
-        const resp = await fetch(`${API}/api/stt`, { method: "POST", body: fd });
-        const data = await resp.json();
-        input.value = data.text || "";
-      } catch (e) {
-        alert("STT failed, please try again.");
-      }
-    };
-    mediaRecorder.start();
-    recognizing = true;
-    micBtn.textContent = "⏹ Stop";
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      rec = mediaRecorder;
+      chunks = [];
+      
+      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        const fd = new FormData();
+        fd.append("audio", blob, "audio.webm");
+        
+        try {
+          const resp = await fetch(`${API}/api/stt`, { method: "POST", body: fd });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          
+          const data = await resp.json();
+          input.value = data.text || "";
+          if (data.text) {
+            GAMIFY.awardXP(3);
+            toast("Perfect! Whisper heard: " + data.text + " ✨");
+          }
+        } catch (e) {
+          console.error('STT error:', e);
+          toast("Speech recognition failed. Please try again! 🔄");
+        }
+        
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      mediaRecorder.start();
+      recognizing = true;
+      micBtn.innerHTML = '<span>⏹️</span><span>Stop</span>';
+      micBtn.classList.add('loading');
+      
+    } catch (e) {
+      console.error('Microphone error:', e);
+      toast("Couldn't access microphone. Please allow microphone permissions! 🎤");
+    }
   } else {
     rec.stop();
     recognizing = false;
-    micBtn.textContent = "🎤 Speak";
+    micBtn.innerHTML = '<span>🎤</span><span>Speak</span>';
+    micBtn.classList.remove('loading');
   }
 }
 
-
-// --- Phrase packs ---
+// Phrase packs
 const phrasesBar = document.getElementById("phrasesBar");
 let phrasePacks = {};
 
@@ -142,7 +205,7 @@ async function loadPhrases() {
     phrasePacks = await resp.json();
     renderPhrases();
   } catch (e) {
-    console.warn("No phrases.json found", e);
+    console.warn("Could not load phrases:", e);
   }
 }
 
@@ -150,39 +213,52 @@ function renderPhrases() {
   const scene = sceneSel.value;
   const pack = phrasePacks[scene] || [];
   phrasesBar.innerHTML = "";
+  
+  if (pack.length === 0) {
+    phrasesBar.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No phrases available for this scene yet 📝</p>';
+    return;
+  }
+  
   pack.forEach(p => {
     const b = document.createElement("button");
-    b.textContent = `${p.hi}`;
+    b.textContent = p.hi;
     b.title = `${p.en} (${p.tr})`;
     b.addEventListener("click", () => {
-      input.value = p.tr; // fill transliteration to make speaking easier
+      input.value = p.tr;
+      GAMIFY.awardXP(2);
+      GAMIFY.tapPhrase();
+      toast("Phrase added! Try saying it out loud 🗣️");
     });
     phrasesBar.appendChild(b);
   });
 }
 
-sceneSel.addEventListener("change", renderPhrases);
-window.addEventListener("load", loadPhrases);
-
-
-
 sceneSel.addEventListener("change", () => {
+  renderPhrases();
+  
+  // Update greeting based on scene
   if (history.length <= 1) {
     const s = sceneSel.value;
     let open = "Namaste! Kaise madad karun? (Hello! How can I help?)";
-    if (s === "market") open = "Namaste! Aaj kaun si sabzi chahiye? (Hello! Which vegetables would you like today?)";
-    if (s === "taxi") open = "Namaste! Kahan chalna hai? (Hello! Where to?)";
-    if (s === "rickshaw") open = "Namaste! Kahan le chalun? (Hello! Where should I take you?)";
-    if (s === "neighbor") open = "Namaste beti, kaise ho? (Hello dear, how are you?)";
-    if (s === "introductions") open = "Namaste! Aapka parichay dijiyega? (Hello! Please introduce yourself.)";
-    if (s === "church") open = "Prabhu ka shukr hai! Aap kaise hain? (Thanks be to the Lord! How are you?)";
+    
+    const greetings = {
+      market: "Namaste! Aaj kaun si sabzi chahiye? (Hello! Which vegetables would you like today?) 🥕",
+      taxi: "Namaste! Kahan chalna hai? (Hello! Where to?) 🚕",
+      rickshaw: "Namaste! Kahan le chalun? (Hello! Where should I take you?) 🛺",
+      neighbor: "Namaste beti, kaise ho? (Hello dear, how are you?) 👋",
+      introductions: "Namaste! Aapka parichay dijiyega? (Hello! Please introduce yourself.) 🤝",
+      church: "Prabhu ka shukr hai! Aap kaise hain? (Thanks be to the Lord! How are you?) ⛪"
+    };
+    
+    open = greetings[s] || open;
     history = [{ role: "assistant", content: open }];
     render();
   }
 });
 
+window.addEventListener("load", loadPhrases);
 
-// ===== Gamification =====
+// ===== GAMIFICATION SYSTEM =====
 const streakEl = document.getElementById("streak");
 const xpEl = document.getElementById("xp");
 const chaiEl = document.getElementById("chai");
@@ -192,60 +268,104 @@ const missionDoneBtn = document.getElementById("missionDone");
 
 const GAMIFY = {
   key: "namaste_emily_progress",
+  
   load() {
-    try { return JSON.parse(localStorage.getItem(this.key)) || {}; } catch { return {}; }
+    try { 
+      return JSON.parse(localStorage.getItem(this.key)) || {}; 
+    } catch { 
+      return {}; 
+    }
   },
-  save(state) { localStorage.setItem(this.key, JSON.stringify(state)); },
+  
+  save(state) { 
+    localStorage.setItem(this.key, JSON.stringify(state)); 
+  },
+  
   init() {
     const s = this.load();
     const today = new Date().toISOString().slice(0,10);
 
     // Streak logic
     if (!s.lastDay) {
-      s.lastDay = today; s.streak = 1;
+      s.lastDay = today; 
+      s.streak = 1;
     } else if (s.lastDay !== today) {
-      const d1 = new Date(s.lastDay), d2 = new Date(today);
+      const d1 = new Date(s.lastDay);
+      const d2 = new Date(today);
       const diff = (d2 - d1) / (1000*3600*24);
       s.streak = (diff === 1) ? (s.streak||0)+1 : 1;
       s.lastDay = today;
     }
 
-    // Defaults
+    // Initialize defaults
     s.xp = s.xp || 0;
     s.chai = s.chai || 0;
     s.badges = s.badges || {};
     s.scenes = s.scenes || {};
     s.phrasesTapped = s.phrasesTapped || 0;
+    
     this.state = s;
     this.updateHUD();
     this.renderBadges();
-    MISSIONS.render();
     this.save(s);
   },
-  awardXP(n){ this.state.xp += n; this.updateHUD(); this.save(this.state); },
-  awardChai(n){ this.state.chai += n; this.updateHUD(); this.save(this.state); },
-  touchScene(scene){ this.state.scenes[scene]=(this.state.scenes[scene]||0)+1; this.checkBadges(); this.save(this.state); },
-  tapPhrase(){ this.state.phrasesTapped += 1; this.checkBadges(); this.save(this.state); },
-  checkBadges(){
+  
+  awardXP(n) { 
+    this.state.xp += n; 
+    this.updateHUD(); 
+    this.save(this.state); 
+  },
+  
+  awardChai(n) { 
+    this.state.chai += n; 
+    this.updateHUD(); 
+    this.save(this.state); 
+  },
+  
+  touchScene(scene) { 
+    this.state.scenes[scene] = (this.state.scenes[scene]||0) + 1; 
+    this.checkBadges(); 
+    this.save(this.state); 
+  },
+  
+  tapPhrase() { 
+    this.state.phrasesTapped += 1; 
+    this.checkBadges(); 
+    this.save(this.state); 
+  },
+  
+  checkBadges() {
     const b = this.state.badges;
-    const push = (id, label, emo) => { if (!b[id]) { b[id] = {label, emo, date: new Date().toISOString() }; toast(`${emo} ${label}!`); confetti(); } };
-    // First message badge
+    const push = (id, label, emo) => { 
+      if (!b[id]) { 
+        b[id] = {label, emo, date: new Date().toISOString()}; 
+        toast(`${emo} Achievement unlocked: ${label}!`); 
+        confetti(); 
+      } 
+    };
+    
+    // Achievement conditions
     if ((history?.length||0) >= 2) push("first_talk","First Conversation","🎉");
-    // Phrase lover
-    if (this.state.phrasesTapped >= 5) push("phrase_5","Tapped 5 phrases","🗣️");
-    // Explorer: 3 scenes
-    const sceneCount = Object.keys(this.state.scenes).length;
-    if (sceneCount >= 3) push("explorer","Tried 3 scenes","🧭");
-    // 3-day streak
-    if ((this.state.streak||0) >= 3) push("streak_3","3-day streak","🔥");
-    // Church greeter: if church scene used at least once
-    if ((this.state.scenes["church"]||0) >= 1) push("church_hello","Church greeting","⛪");
+    if (this.state.phrasesTapped >= 5) push("phrase_5","Phrase Explorer","🗣️");
+    if (Object.keys(this.state.scenes).length >= 3) push("explorer","Scene Explorer","🧭");
+    if ((this.state.streak||0) >= 3) push("streak_3","3-Day Streak","🔥");
+    if ((this.state.scenes["church"]||0) >= 1) push("church_hello","Church Greeter","⛪");
+    if (this.state.xp >= 100) push("xp_100","Century Club","💯");
+    if (this.state.chai >= 5) push("chai_5","Chai Master","☕");
+    
     this.state.badges = b;
     this.renderBadges();
   },
-  renderBadges(){
+  
+  renderBadges() {
     badgesBar.innerHTML = "";
     const b = this.state.badges || {};
+    
+    if (Object.keys(b).length === 0) {
+      badgesBar.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">Start chatting to unlock achievements! 🏆</p>';
+      return;
+    }
+    
     Object.entries(b).forEach(([id, v]) => {
       const el = document.createElement("div");
       el.className = "badge";
@@ -253,102 +373,98 @@ const GAMIFY = {
       badgesBar.appendChild(el);
     });
   },
-  updateHUD(){
+  
+  updateHUD() {
     streakEl.textContent = this.state.streak || 0;
     xpEl.textContent = this.state.xp || 0;
     chaiEl.textContent = this.state.chai || 0;
   }
 };
 
-// Missions of the day
+// Daily Missions
 const MISSIONS = {
   pool: [
-    {scene:"market", text:"Buy 2 veggies and say the price politely."},
-    {scene:"rickshaw", text:"Ask for a short ride and bargain kindly."},
-    {scene:"introductions", text:"Introduce Jonathan and Sophia to a neighbor."},
-    {scene:"church", text:"Greet an elder respectfully and say thanks."},
-    {scene:"neighbor", text:"Ask a neighbor how long they've lived here."},
-    {scene:"taxi", text:"Ask for fare and request slow driving."}
+    {scene:"market", text:"Buy 2 vegetables and ask about the price politely"},
+    {scene:"rickshaw", text:"Ask for a ride and practice friendly bargaining"},
+    {scene:"introductions", text:"Introduce Jonathan and Sophia to a neighbor"},
+    {scene:"church", text:"Greet an elder respectfully and say thank you"},
+    {scene:"neighbor", text:"Ask a neighbor how long they've lived there"},
+    {scene:"taxi", text:"Ask about fare and request careful driving"}
   ],
-  pick(){
+  
+  pick() {
     const day = new Date().getDate();
     return this.pool[day % this.pool.length];
   },
-  render(){
+  
+  render() {
     const m = this.pick();
     missionText.textContent = `${m.text} (Scene: ${m.scene})`;
-    // Preselect scene for convenience
     sceneSel.value = m.scene;
-    renderPhrases && renderPhrases();
+    renderPhrases();
   },
-  complete(){
+  
+  complete() {
     GAMIFY.awardXP(20);
     GAMIFY.awardChai(1);
-    toast("Mission complete! +20 XP, +1 chai ☕");
+    toast("🎯 Mission completed! +20 XP, +1 chai cup!");
     confetti();
   }
 };
 
 missionDoneBtn?.addEventListener("click", () => MISSIONS.complete());
 
-// Simple toast + confetti
+// Toast notifications
 let toastTimer;
-function toast(msg){
+function toast(msg) {
+  clearTimeout(toastTimer);
+  
+  // Remove existing toast
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  
   const t = document.createElement("div");
-  t.style.position="fixed"; t.style.bottom="20px"; t.style.left="50%"; t.style.transform="translateX(-50%)";
-  t.style.background="#275d38"; t.style.color="#fff"; t.style.padding="10px 14px"; t.style.borderRadius="10px"; t.style.zIndex=1000;
+  t.className = "toast";
   t.textContent = msg;
   document.body.appendChild(t);
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>t.remove(), 1800);
+  
+  toastTimer = setTimeout(() => {
+    t.style.animation = 'toastSlide 0.3s ease-out reverse';
+    setTimeout(() => t.remove(), 300);
+  }, 3000);
 }
-function confetti(){
-  const c = document.createElement("div"); c.className="confetti"; document.body.appendChild(c);
-  const emojis = ["🎉","✨","🎊","🌟","💫","🍬","🍭","☕"];
-  const n = 16;
-  for (let i=0;i<n;i++){
+
+// Confetti animation
+function confetti() {
+  const c = document.createElement("div"); 
+  c.className = "confetti"; 
+  document.body.appendChild(c);
+  
+  const emojis = ["🎉","✨","🎊","🌟","💫","🍬","🍭","☕","🏆","⭐"];
+  const colors = ["#ff6b35", "#4ecdc4", "#ffd23f", "#06d6a0", "#ef476f"];
+  
+  for (let i = 0; i < 20; i++) {
     const s = document.createElement("span");
-    s.textContent = emojis[Math.floor(Math.random()*emojis.length)];
-    s.style.left = Math.random()*100 + "vw";
-    s.style.fontSize = (16+Math.random()*14) + "px";
-    s.style.transform = `translateY(-20px) rotate(${Math.random()*360}deg)`;
+    s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    s.style.left = Math.random() * 100 + "vw";
+    s.style.color = colors[Math.floor(Math.random() * colors.length)];
+    s.style.fontSize = (16 + Math.random() * 12) + "px";
+    s.style.animationDelay = Math.random() * 0.5 + "s";
+    s.style.animationDuration = (1.5 + Math.random() * 1) + "s";
     c.appendChild(s);
   }
-  setTimeout(()=>c.remove(), 1600);
+  
+  setTimeout(() => c.remove(), 3000);
 }
 
-// Hook into existing actions to award XP/Chai
-const _sendOrig = send;
-async function send(){
-  await _sendOrig();
-  GAMIFY.awardXP(5);
-  GAMIFY.touchScene(sceneSel.value);
-}
-
-if (typeof recordAndSendToServer === "function") {
-  const _recOrig = recordAndSendToServer;
-  recordAndSendToServer = async function(){
-    await _recOrig();
-    GAMIFY.awardXP(3);
-  }
-}
-
-if (typeof renderPhrases === "function") {
-  const _renderPhrases = renderPhrases;
-  renderPhrases = function(){
-    _renderPhrases();
-    // add listeners to phrase buttons to award XP on click
-    document.querySelectorAll("#phrasesBar button").forEach(b => {
-      if (!b._gamifyBound) {
-        b.addEventListener("click", ()=>{ GAMIFY.awardXP(2); GAMIFY.tapPhrase(); });
-        b._gamifyBound = true;
-      }
-    });
-  }
-}
-
-// Initialize gamification after load
+// Initialize everything
 window.addEventListener("load", () => {
   GAMIFY.init();
+  MISSIONS.render();
   GAMIFY.checkBadges();
+  
+  // Welcome message
+  setTimeout(() => {
+    toast("Welcome to your Hindi learning journey, Emily! 🌟");
+  }, 1000);
 });

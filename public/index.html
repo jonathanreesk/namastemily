@@ -3,62 +3,104 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Namaste, Emily — Pilot</title>
+  <title>Namaste, Emily — Hindi Learning Journey</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="description" content="Interactive Hindi learning with Asha Aunty - personalized for Emily's journey in India">
+  <meta name="theme-color" content="#ff6b35">
 </head>
 <body>
   <div class="container">
     <header>
-      <div class="hud">
-        <div class="hud-item">🔥 Streak: <span id="streak">0</span></div>
-        <div class="hud-item">⭐ XP: <span id="xp">0</span></div>
-        <div class="hud-item">☕ Chai: <span id="chai">0</span></div>
+      <div class="header-content">
+        <div class="title-section">
+          <h1>Namaste, Emily ✨</h1>
+          <p class="subtitle">Your personal Hindi learning companion</p>
+        </div>
+        <div class="hud">
+          <div class="hud-item streak">
+            <span class="emo">🔥</span>
+            <span>Streak: <strong id="streak">0</strong></span>
+          </div>
+          <div class="hud-item xp">
+            <span class="emo">⭐</span>
+            <span>XP: <strong id="xp">0</strong></span>
+          </div>
+          <div class="hud-item chai">
+            <span class="emo">☕</span>
+            <span>Chai: <strong id="chai">0</strong></span>
+          </div>
+        </div>
       </div>
-      <h1>Namaste, Emily <span>— Live Pilot</span></h1>
-      <p class="tag">Friendly Hindi practice with Asha Aunty.</p>
     </header>
 
-    <section id="missionBar" class="mission"><strong>Mission of the Day:</strong> <span id="missionText"></span> <button id="missionDone" class="tiny">Mark done</button></section>
+    <section class="mission">
+      <div class="mission-content">
+        <div class="mission-title">Today's Mission</div>
+        <div class="mission-text" id="missionText">Loading your daily challenge...</div>
+      </div>
+      <button id="missionDone" class="mission-btn">Complete ✓</button>
+    </section>
 
     <section class="controls">
-      <label>Scene:
+      <div class="control-group">
+        <label>Scene</label>
         <select id="scene">
-          <option value="market">Market</option>
-          <option value="taxi">Taxi</option>
-          <option value="neighbor">Neighbor</option>
-          <option value="introductions">Introductions</option>
-          <option value="church">Church</option>
-          <option value="rickshaw">Rickshaw</option>
+          <option value="market">🛒 Market</option>
+          <option value="taxi">🚕 Taxi</option>
+          <option value="neighbor">👋 Neighbor</option>
+          <option value="introductions">🤝 Introductions</option>
+          <option value="church">⛪ Church</option>
+          <option value="rickshaw">🛺 Rickshaw</option>
         </select>
-      </label>
-      <label>Level:
+      </div>
+      <div class="control-group">
+        <label>Level</label>
         <select id="level">
-          <option value="beginner">Beginner</option>
-          <option value="intermediate">Intermediate</option>
+          <option value="beginner">🌱 Beginner</option>
+          <option value="intermediate">🌿 Intermediate</option>
         </select>
-      </label>
-      <label class="toggle">
-        <input type="checkbox" id="useServerSTT" />
-        Use Server STT (Whisper)
-      </label>
+      </div>
+      <div class="toggle-group">
+        <span>Server STT</span>
+        <label class="toggle">
+          <input type="checkbox" id="useServerSTT" />
+          <span class="slider"></span>
+        </label>
+      </div>
     </section>
 
     <div id="phrasesBar" class="phrases"></div>
 
-    <section id="chat" class="chat"></section>
+    <section id="chat" class="chat">
+      <div class="msg assistant">
+        <strong>Asha Aunty:</strong> Namaste Emily ji! Ready for today's Hindi adventure? 🌟
+      </div>
+    </section>
 
     <section class="composer">
-      <textarea id="input" placeholder="Type in English/Hinglish/Hindi..."></textarea>
-      <div class="actions">
-        <button id="micBtn">🎤 Speak</button>
-        <button id="sendBtn" class="primary">Send</button>
+      <div class="input-container">
+        <textarea id="input" placeholder="Type in English, Hinglish, or Hindi... या हिंदी में लिखें"></textarea>
+        <div class="actions">
+          <button id="micBtn" class="btn btn-secondary">
+            <span>🎤</span>
+            <span>Speak</span>
+          </button>
+          <button id="sendBtn" class="btn btn-primary">
+            <span>Send</span>
+            <span>→</span>
+          </button>
+        </div>
       </div>
     </section>
 
     <section id="badgesBar" class="badges"></section>
 
     <footer>
-      <small>Tip: Speak short sentences. Asha will reply with Hindi + transliteration + English.</small>
+      <p>💡 <strong>Pro tip:</strong> Speak in short sentences for better recognition. Asha Aunty will reply with Hindi + pronunciation + English meaning!</p>
+      <p>🎯 Practice daily to maintain your streak and unlock new achievements</p>
     </footer>
   </div>
 
