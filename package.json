@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "dev": "echo 'This project is designed for Bolt platform. Serve the public directory with a static file server for local development.'",
     "build": "echo 'No build step required - serving static files directly'"
   },
   "dependencies": {
