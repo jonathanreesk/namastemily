@@ -20,26 +20,6 @@ footer{margin-top:10px;color:#666}
 .phrases{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
 .phrases button{font-size:13px;padding:6px 10px;border-radius:8px;background:#fff;border:1px solid #ddd}
 
-
-/* HUD */
-.hud{display:flex;gap:12px;justify-content:flex-end;align-items:center;margin-top:8px;color:#333;font-size:14px;flex-wrap:wrap}
-.hud-item{background:#fff;border:1px solid #eee;border-radius:10px;padding:6px 10px}
-
-/* Mission bar */
-.mission{display:flex;gap:10px;align-items:center;background:#fff;border:1px dashed #cfe3d1;border-radius:12px;padding:10px;margin-bottom:10px}
-.mission .tiny{font-size:12px;padding:6px 8px;border-radius:8px}
-
-/* Badges */
-.badges{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
-.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 8px;border-radius:999px;border:1px solid #eee;background:#fff;font-size:13px}
-.badge .emo{font-size:16px}
-
-/* Confetti */
-.confetti{position:fixed;top:0;left:0;pointer-events:none;width:100vw;height:0;z-index:999}
-.confetti span{position:absolute;animation:fall 1.5s linear forwards;opacity:0.9}
-@keyframes fall{to{transform:translateY(90vh) rotate(540deg);opacity:0}}
-
-
 /* HUD */
 .hud{display:flex;gap:12px;justify-content:flex-end;align-items:center;margin-top:8px;color:#333;font-size:14px;flex-wrap:wrap}
 .hud-item{background:#fff;border:1px solid #eee;border-radius:10px;padding:6px 10px}
