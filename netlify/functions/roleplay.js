@@ -1,7 +1,7 @@
-const { readFileSync } = require('fs');
-const path = require('path');
+import { readFileSync } from 'fs';
+import path from 'path';
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   // Handle CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',

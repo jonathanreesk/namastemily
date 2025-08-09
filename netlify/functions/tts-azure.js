@@ -1,6 +1,6 @@
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   console.log('Azure TTS function called');
   console.log('Environment check:', {
     hasKey: !!process.env.AZURE_SPEECH_KEY,

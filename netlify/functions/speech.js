@@ -1,4 +1,4 @@
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   console.log('Speech function called with method:', event.httpMethod);
   console.log('Speech function called');
   console.log('Environment check:', {
