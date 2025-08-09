@@ -2,6 +2,9 @@
   "name": "namaste-emily-bolt",
   "version": "0.1.0",
   "private": true,
+  "scripts": {
+    "build": "echo 'No build step required - serving static files directly'"
+  },
   "dependencies": {
     "openai": "^4.55.3"
   }
