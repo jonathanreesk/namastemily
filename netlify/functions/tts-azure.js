@@ -1,6 +1,13 @@
 const fetch = require('node-fetch');
 
 exports.handler = async (event, context) => {
+  console.log('Azure TTS function called');
+  console.log('Environment check:', {
+    hasKey: !!process.env.AZURE_SPEECH_KEY,
+    hasRegion: !!process.env.AZURE_SPEECH_REGION,
+    keyLength: process.env.AZURE_SPEECH_KEY ? process.env.AZURE_SPEECH_KEY.length : 0
+  });
+
   // Handle CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -37,11 +44,18 @@ exports.handler = async (event, context) => {
     const key = process.env.AZURE_SPEECH_KEY;
     const region = process.env.AZURE_SPEECH_REGION;
     if (!key || !region) {
-      console.error('Missing Azure credentials:', { key: !!key, region: !!region });
+      console.error('Missing Azure credentials:', { 
+        key: !!key, 
+        region: !!region,
+        keyPreview: key ? key.substring(0, 8) + '...' : 'undefined'
+      });
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ error: "Missing Azure speech environment variables" })
+        body: JSON.stringify({ 
+          error: "Missing Azure speech environment variables",
+          debug: { hasKey: !!key, hasRegion: !!region }
+        })
       };
     }
 
@@ -270,10 +284,14 @@ exports.handler = async (event, context) => {
 
     if (!resp.ok) {
       const errText = await resp.text();
+      console.error('Azure API error:', resp.status, errText);
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ error: `azure_tts_failed: ${errText}` })
+        body: JSON.stringify({ 
+          error: `azure_tts_failed: ${resp.status} ${errText}`,
+          status: resp.status
+        })
       };
     }
 
