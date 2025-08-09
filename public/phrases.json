@@ -53,6 +53,11 @@
       "hi": "Meter se chalenge?",
       "en": "Will you go by the meter?",
       "tr": "Meter se chalenge?"
+    },
+    {
+      "hi": "Meter se chalenge?",
+      "en": "Will you go by the meter?",
+      "tr": "Meter se chalenge?"
     }
   ],
   "neighbor": [
@@ -70,6 +75,11 @@
       "hi": "Aap se milkar khushi hui.",
       "en": "Nice to meet you.",
       "tr": "Aap se milkar khushi hui."
+    },
+    {
+      "hi": "Aap yahan kab se rehte hain?",
+      "en": "Since when have you been living here?",
+      "tr": "Aap yahan kab se rehte hain?"
     },
     {
       "hi": "Aap yahan kab se rehte hain?",
@@ -102,6 +112,16 @@
       "hi": "Yeh meri beti Sophia hai.",
       "en": "This is my daughter, Sophia.",
       "tr": "Yeh meri beti Sophia hai."
+    },
+    {
+      "hi": "Yeh mere pati Jonathan hain.",
+      "en": "This is my husband, Jonathan.",
+      "tr": "Yeh mere pati Jonathan hain."
+    },
+    {
+      "hi": "Yeh meri beti Sophia hai.",
+      "en": "This is my daughter, Sophia.",
+      "tr": "Yeh meri beti Sophia hai."
     }
   ],
   "church": [
@@ -119,6 +139,11 @@
       "hi": "Prarthana ke liye dhanyavaad.",
       "en": "Thank you for the prayer.",
       "tr": "Prarthana ke liye dhanyavaad."
+    },
+    {
+      "hi": "Prabhu aapko aashish de.",
+      "en": "May the Lord bless you.",
+      "tr": "Prabhu aapko aashish de."
     },
     {
       "hi": "Prabhu aapko aashish de.",

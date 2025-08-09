@@ -1,6 +1,4 @@
 
-import OpenAI from "openai";
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
@@ -8,8 +6,11 @@ export default async function handler(req, res) {
   try {
     const { history = [], scene = "market", level = "beginner" } = req.body;
 
-    const scenes = JSON.parse(await Bun.file("server/scenes.json").text());
-    const persona = await Bun.file("server/persona.txt").text();
+    const { readFile } = await import('fs/promises');
+    const path = await import('path');
+    
+    const scenes = JSON.parse(await readFile(path.join(process.cwd(), 'server/scenes.json'), 'utf8'));
+    const persona = await readFile(path.join(process.cwd(), 'server/persona.txt'), 'utf8');
 
     const scenePersona = scenes[scene] || scenes.market;
     const system = [
@@ -24,6 +25,7 @@ export default async function handler(req, res) {
       ...history
     ];
 
+    const { default: OpenAI } = await import('openai');
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const resp = await client.chat.completions.create({
       model: "gpt-4o-mini",

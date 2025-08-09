@@ -1,22 +1,23 @@
 
-import OpenAI from "openai";
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
   try {
-    const { audioBase64, mime = "audio/webm" } = req.body;
-    if (!audioBase64) {
+    // Handle multipart form data from the frontend
+    const formData = req.body;
+    const audioFile = req.files?.audio;
+    
+    if (!audioFile) {
       return res.status(400).json({ error: "missing_audio" });
     }
+    
+    const { default: OpenAI } = await import('openai');
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const buffer = Buffer.from(audioBase64, "base64");
-    const file = new Blob([buffer], { type: mime });
 
     const transcript = await client.audio.transcriptions.create({
       model: "whisper-1",
-      file,
+      file: audioFile,
       language: "hi",
       response_format: "json"
     });
