@@ -25,8 +25,19 @@ function addMsg(role, content) {
   if (role === "assistant") {
     div.innerHTML = `
       <div class="msg-header">
-  speakWithOpenAI(text);
-}
+        <span class="speaker">Asha Aunty:</span>
+        <button class="speak-btn" onclick="speak('${content.replace(/'/g, "\\'")}')">🔊</button>
+      </div>
+      <div class="msg-content">${content}</div>
+    `;
+  } else {
+    div.innerHTML = `
+      <div class="msg-header">
+        <span class="speaker">You:</span>
+      </div>
+      <div class="msg-content">${content}</div>
+    `;
+  }
 
 async function speakWithOpenAI(text) {
   try {
