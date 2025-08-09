@@ -1,154 +1,154 @@
 {
   "market": [
     {
-      "hi": "Mujhe tamatar aur aalu chahiye.",
+      "hi": "मुझे टमाटर और आलू चाहिए।",
       "en": "I want tomatoes and potatoes.",
       "tr": "Mujhe tamatar aur aalu chahiye."
     },
     {
-      "hi": "Daam kya hai?",
-      "en": "What is the price?",
-      "tr": "Daam kya hai?"
+      "hi": "यह कितने का है?",
+      "en": "How much is this?",
+      "tr": "Yeh kitne ka hai?"
     },
     {
-      "hi": "Thoda sasta kijiye, kripya.",
-      "en": "Please make it a bit cheaper.",
-      "tr": "Thoda sasta kijiye, kripya."
+      "hi": "थोड़ा कम कर दीजिए, कृपया।",
+      "en": "Please reduce the price a little.",
+      "tr": "Thoda kam kar dijiye, kripya."
+    },
+    {
+      "hi": "यह ताज़ा है?",
+      "en": "Is this fresh?",
+      "tr": "Yeh taaza hai?"
+    },
+    {
+      "hi": "एक किलो दे दीजिए।",
+      "en": "Please give me one kilo.",
+      "tr": "Ek kilo de dijiye."
     }
   ],
   "taxi": [
     {
-      "hi": "Mujhe bazaar tak chalna hai.",
+      "hi": "मुझे बाज़ार जाना है।",
       "en": "I need to go to the market.",
-      "tr": "Mujhe bazaar tak chalna hai."
+      "tr": "Mujhe bazaar jana hai."
     },
     {
-      "hi": "Kitna kiraya hoga?",
-      "en": "How much will the fare be?",
-      "tr": "Kitna kiraya hoga?"
+      "hi": "कितना लगेगा?",
+      "en": "How much will it cost?",
+      "tr": "Kitna lagega?"
     },
     {
-      "hi": "Zara dheere chalenge?",
-      "en": "Could you drive a little slower?",
-      "tr": "Zara dheere chalenge?"
+      "hi": "ज़रा धीरे चलिएगा।",
+      "en": "Please drive a little slowly.",
+      "tr": "Zara dheere chaliyega."
+    },
+    {
+      "hi": "मीटर से चलेंगे?",
+      "en": "Will you go by the meter?",
+      "tr": "Meter se chalenge?"
     }
   ],
   "rickshaw": [
     {
-      "hi": "Station tak chaloge?",
+      "hi": "स्टेशन तक चलेंगे?",
       "en": "Will you go to the station?",
-      "tr": "Station tak chaloge?"
+      "tr": "Station tak chalenge?"
     },
     {
-      "hi": "Pachaas theek hoga?",
-      "en": "Is 50 okay?",
-      "tr": "Pachaas theek hoga?"
+      "hi": "पचास रुपए ठीक है?",
+      "en": "Is fifty rupees okay?",
+      "tr": "Pachaas rupaye theek hai?"
     },
     {
-      "hi": "Thoda kam kijiye, kripya.",
+      "hi": "थोड़ा कम कर दीजिए।",
       "en": "Please reduce a little.",
-      "tr": "Thoda kam kijiye, kripya."
+      "tr": "Thoda kam kar dijiye."
     },
     {
-      "hi": "Meter se chalenge?",
-      "en": "Will you go by the meter?",
-      "tr": "Meter se chalenge?"
-    },
-    {
-      "hi": "Meter se chalenge?",
-      "en": "Will you go by the meter?",
-      "tr": "Meter se chalenge?"
+      "hi": "कितनी देर लगेगी?",
+      "en": "How long will it take?",
+      "tr": "Kitni der lagegi?"
     }
   ],
   "neighbor": [
     {
-      "hi": "Namaste, main Emily hoon.",
+      "hi": "नमस्ते, मैं Emily हूँ।",
       "en": "Hello, I'm Emily.",
       "tr": "Namaste, main Emily hoon."
     },
     {
-      "hi": "Yeh meri beti Sophia hai.",
+      "hi": "यह मेरी बेटी Sophia है।",
       "en": "This is my daughter, Sophia.",
       "tr": "Yeh meri beti Sophia hai."
     },
     {
-      "hi": "Aap se milkar khushi hui.",
+      "hi": "आपसे मिलकर खुशी हुई।",
       "en": "Nice to meet you.",
-      "tr": "Aap se milkar khushi hui."
+      "tr": "Aapse milkar khushi hui."
     },
     {
-      "hi": "Aap yahan kab se rehte hain?",
+      "hi": "आप यहाँ कब से रहते हैं?",
       "en": "Since when have you been living here?",
       "tr": "Aap yahan kab se rehte hain?"
     },
     {
-      "hi": "Aap yahan kab se rehte hain?",
-      "en": "Since when have you been living here?",
-      "tr": "Aap yahan kab se rehte hain?"
+      "hi": "चाय पीने आइएगा।",
+      "en": "Please come for tea.",
+      "tr": "Chai peene aaiyega."
     }
   ],
   "introductions": [
     {
-      "hi": "Hum Minneapolis, America se hain.",
-      "en": "We're from Minneapolis, USA.",
+      "hi": "हम Minneapolis, America से हैं।",
+      "en": "We're from Minneapolis, America.",
       "tr": "Hum Minneapolis, America se hain."
     },
     {
-      "hi": "Hum yahan chhe mahine rehte hain.",
+      "hi": "हम यहाँ छह महीने रहते हैं।",
       "en": "We live here for six months.",
       "tr": "Hum yahan chhe mahine rehte hain."
     },
     {
-      "hi": "Kal milte hain?",
+      "hi": "कल मिलते हैं?",
       "en": "Shall we meet tomorrow?",
       "tr": "Kal milte hain?"
     },
     {
-      "hi": "Yeh mere pati Jonathan hain.",
+      "hi": "यह मेरे पति Jonathan हैं।",
       "en": "This is my husband, Jonathan.",
       "tr": "Yeh mere pati Jonathan hain."
     },
     {
-      "hi": "Yeh meri beti Sophia hai.",
-      "en": "This is my daughter, Sophia.",
-      "tr": "Yeh meri beti Sophia hai."
-    },
-    {
-      "hi": "Yeh mere pati Jonathan hain.",
-      "en": "This is my husband, Jonathan.",
-      "tr": "Yeh mere pati Jonathan hain."
-    },
-    {
-      "hi": "Yeh meri beti Sophia hai.",
-      "en": "This is my daughter, Sophia.",
-      "tr": "Yeh meri beti Sophia hai."
+      "hi": "आपका नाम क्या है?",
+      "en": "What is your name?",
+      "tr": "Aapka naam kya hai?"
     }
   ],
   "church": [
     {
-      "hi": "Yeshu mein shanti mile.",
+      "hi": "यीशु में शांति मिले।",
       "en": "May you find peace in Jesus.",
       "tr": "Yeshu mein shanti mile."
     },
     {
-      "hi": "Aap kaisi hain, Aunty?",
+      "hi": "आप कैसी हैं, आंटी जी?",
       "en": "How are you, Aunty?",
-      "tr": "Aap kaisi hain, Aunty?"
+      "tr": "Aap kaisi hain, Aunty ji?"
     },
     {
-      "hi": "Prarthana ke liye dhanyavaad.",
+      "hi": "प्रार्थना के लिए धन्यवाद।",
       "en": "Thank you for the prayer.",
       "tr": "Prarthana ke liye dhanyavaad."
     },
     {
-      "hi": "Prabhu aapko aashish de.",
+      "hi": "प्रभु आपको आशीष दे।",
       "en": "May the Lord bless you.",
       "tr": "Prabhu aapko aashish de."
     },
     {
-      "hi": "Prabhu aapko aashish de.",
-      "en": "May the Lord bless you.",
-      "tr": "Prabhu aapko aashish de."
+      "hi": "आज का संदेश बहुत अच्छा था।",
+      "en": "Today's message was very good.",
+      "tr": "Aaj ka sandesh bahut accha tha."
     }
   ]
 }
