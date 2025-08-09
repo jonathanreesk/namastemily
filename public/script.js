@@ -58,7 +58,6 @@ const sendBtn = document.getElementById("sendBtn");
 const micBtn = document.getElementById("micBtn");
 const sceneSel = document.getElementById("scene");
 const levelSel = document.getElementById("level");
-const useServerSTT = document.getElementById("useServerSTT");
 
 let history = [
   { role: "assistant", content: "Hi Emily! I'm Aasha Aunty, your friendly Hindi teacher. I'm here to help you learn practical Hindi phrases for your time in India. Let's start with something simple - which situation would you like to practice first? Market shopping, taking a taxi, or meeting your neighbors?" }
@@ -233,11 +232,7 @@ let chunks = [];
 let recognizing = false;
 
 micBtn.addEventListener("click", async () => {
-  if (useServerSTT.checked) {
-    await recordAndSendToServer();
-  } else {
-    webSpeechDictation();
-  }
+  webSpeechDictation();
 });
 
 function webSpeechDictation() {
@@ -273,60 +268,6 @@ function webSpeechDictation() {
   };
   
   recog.start();
-}
-
-async function recordAndSendToServer() {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    toast("Microphone access not available 🎤");
-    return;
-  }
-  
-  if (!recognizing) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      rec = mediaRecorder;
-      chunks = [];
-      
-      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-      mediaRecorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: "audio/webm" });
-        const fd = new FormData();
-        fd.append("audio", blob, "audio.webm");
-        
-        try {
-          const resp = await fetch(`${API}/api/stt`, { method: "POST", body: fd });
-          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          
-          const data = await resp.json();
-          input.value = data.text || "";
-          if (data.text) {
-            GAMIFY.awardXP(3);
-            toast("Perfect! Whisper heard: " + data.text + " ✨");
-          }
-        } catch (e) {
-          console.error('STT error:', e);
-          toast("Speech recognition failed. Please try again! 🔄");
-        }
-        
-        stream.getTracks().forEach(track => track.stop());
-      };
-      
-      mediaRecorder.start();
-      recognizing = true;
-      micBtn.innerHTML = '<span>⏹️</span><span>Stop</span>';
-      micBtn.classList.add('loading');
-      
-    } catch (e) {
-      console.error('Microphone error:', e);
-      toast("Couldn't access microphone. Please allow microphone permissions! 🎤");
-    }
-  } else {
-    rec.stop();
-    recognizing = false;
-    micBtn.innerHTML = '<span>🎤</span><span>Speak</span>';
-    micBtn.classList.remove('loading');
-  }
 }
 
 // Phrase packs
