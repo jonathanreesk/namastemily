@@ -25,62 +25,74 @@ function addMsg(role, content) {
   if (role === "assistant") {
     div.innerHTML = `
       <div class="msg-header">
-        <strong>${prefix.split(':')[0]}:</strong>
-        <button class="listen-btn" onclick="speak('${content.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
-                ontouchstart="" style="cursor: pointer;">
-          <span>🔊</span>
-        </button>
-      </div>
-      <div class="msg-content">${content}</div>
-    `;
-  } else {
-    div.innerHTML = `<strong>${prefix.split(':')[0]}:</strong> ${content}`;
-  }
-  
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
+  speakWithOpenAI(text);
 }
 
-function render() {
-  chat.innerHTML = "";
-  history.forEach(m => addMsg(m.role, m.content));
-}
-
-function speak(text) {
-  if (!("speechSynthesis" in window)) return;
-  
-  // Cancel any ongoing speech
-  window.speechSynthesis.cancel();
-  
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "hi-IN";
-  u.rate = 0.7;
-  u.pitch = 1.1;
-  u.volume = 0.9;
-  
-  // Try to find a Hindi voice
-  const voices = window.speechSynthesis.getVoices();
-  const hindiVoice = voices.find(voice => 
-    voice.lang.includes('hi') || 
-    voice.name.toLowerCase().includes('hindi') ||
-    voice.name.toLowerCase().includes('india')
-  );
-  
-  if (hindiVoice) {
-    u.voice = hindiVoice;
+async function speakWithOpenAI(text) {
+  try {
+    toast("🔊 Generating natural Hindi voice...");
+    
+    const resp = await fetch(`${API}/api/tts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text })
+    });
+    
+    if (!resp.ok) throw new Error("TTS failed");
+    
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    
+    audio.onplay = () => {
+      toast("🔊 Aasha Aunty speaking...");
+    };
+    
+    audio.onended = () => {
+      URL.revokeObjectURL(url); // Clean up memory
+    };
+    
+    audio.onerror = () => {
+      throw new Error("Audio playback failed");
+    };
+    
+    await audio.play();
+    
+  } catch (e) {
+    console.warn('OpenAI TTS failed, falling back to browser TTS:', e);
+    toast("Falling back to browser voice...");
+    
+    // Fallback to browser TTS if server TTS fails
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "hi-IN";
+      u.rate = 0.6;
+      u.pitch = 1.0;
+      u.volume = 0.9;
+      
+      // Try to find the best Hindi voice available
+      const voices = window.speechSynthesis.getVoices();
+      const hindiVoice = voices.find(voice => 
+        voice.lang.includes('hi') || 
+        voice.name.toLowerCase().includes('hindi') ||
+        voice.name.toLowerCase().includes('india')
+      );
+      
+      if (hindiVoice) {
+        u.voice = hindiVoice;
+      }
+      
+      u.onerror = () => {
+        toast("Audio not available on this device 📱");
+      };
+      
+      window.speechSynthesis.speak(u);
+    } else {
+      toast("Audio not available on this device 📱");
+    }
   }
-  
-  // Add error handling for mobile
-  u.onerror = (e) => {
-    console.warn('Speech synthesis error:', e);
-    toast("Audio not available on this device 📱");
-  };
-
-  u.onstart = () => {
-    toast("🔊 Playing Hindi audio...");
-  };
-
-  window.speechSynthesis.speak(u);
 }
 
 async function send() {

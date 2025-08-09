@@ -47,62 +47,74 @@ function render() {
 }
 
 function speak(text) {
-  if (!("speechSynthesis" in window)) return;
-  
-  // Cancel any ongoing speech
-  window.speechSynthesis.cancel();
-  
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "hi-IN";
-  u.rate = 0.6; // Slower for better pronunciation
-  u.pitch = 1.0; // More natural pitch
-  u.volume = 0.9;
-  
-  // Try to find the best Hindi voice available
-  const voices = window.speechSynthesis.getVoices();
-  
-  // Priority order for Hindi voices (best to fallback)
-  const hindiVoicePreferences = [
-    // Google voices (usually best quality)
-    voice => voice.name.toLowerCase().includes('google') && voice.lang.includes('hi'),
-    // Native Hindi voices
-    voice => voice.lang === 'hi-IN' && voice.localService,
-    voice => voice.lang === 'hi-IN',
-    // Any Hindi voice
-    voice => voice.lang.includes('hi'),
-    // Indian English as fallback for better accent
-    voice => voice.lang === 'en-IN',
-    // Names that suggest Hindi/Indian voices
-    voice => voice.name.toLowerCase().includes('hindi'),
-    voice => voice.name.toLowerCase().includes('india'),
-    voice => voice.name.toLowerCase().includes('ravi') || voice.name.toLowerCase().includes('aditi'),
-  ];
-  
-  let selectedVoice = null;
-  for (const preference of hindiVoicePreferences) {
-    selectedVoice = voices.find(preference);
-    if (selectedVoice) break;
-  }
-  
-  if (selectedVoice) {
-    u.voice = selectedVoice;
-    console.log('Using voice:', selectedVoice.name, selectedVoice.lang);
-  } else {
-    console.log('No Hindi voice found, using default');
-  }
-  
-  // Add error handling for mobile
-  u.onerror = (e) => {
-    console.warn('Speech synthesis error:', e);
-    toast("Audio not available on this device 📱");
-  };
+  speakWithOpenAI(text);
+}
 
-  u.onstart = () => {
-    const voiceName = selectedVoice ? selectedVoice.name.split(' ')[0] : 'Default';
-    toast(`🔊 ${voiceName} speaking Hindi...`);
-  };
-
-  window.speechSynthesis.speak(u);
+async function speakWithOpenAI(text) {
+  try {
+    toast("🔊 Generating natural Hindi voice...");
+    
+    const resp = await fetch(`${API}/api/tts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text })
+    });
+    
+    if (!resp.ok) throw new Error("TTS failed");
+    
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    
+    audio.onplay = () => {
+      toast("🔊 Aasha Aunty speaking...");
+    };
+    
+    audio.onended = () => {
+      URL.revokeObjectURL(url); // Clean up memory
+    };
+    
+    audio.onerror = () => {
+      throw new Error("Audio playback failed");
+    };
+    
+    await audio.play();
+    
+  } catch (e) {
+    console.warn('OpenAI TTS failed, falling back to browser TTS:', e);
+    toast("Falling back to browser voice...");
+    
+    // Fallback to browser TTS if server TTS fails
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "hi-IN";
+      u.rate = 0.6;
+      u.pitch = 1.0;
+      u.volume = 0.9;
+      
+      // Try to find the best Hindi voice available
+      const voices = window.speechSynthesis.getVoices();
+      const hindiVoice = voices.find(voice => 
+        voice.lang.includes('hi') || 
+        voice.name.toLowerCase().includes('hindi') ||
+        voice.name.toLowerCase().includes('india')
+      );
+      
+      if (hindiVoice) {
+        u.voice = hindiVoice;
+      }
+      
+      u.onerror = () => {
+        toast("Audio not available on this device 📱");
+      };
+      
+      window.speechSynthesis.speak(u);
+    } else {
+      toast("Audio not available on this device 📱");
+    }
+  }
 }
 
 async function send() {
