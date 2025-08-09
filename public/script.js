@@ -404,9 +404,86 @@ function renderPhrases() {
   console.log('Available phrase packs:', Object.keys(phrasePacks));
   phrasesBar.innerHTML = "";
   
+  // Add header with More Phrases button
+  const headerDiv = document.createElement("div");
+  headerDiv.style.cssText = `
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--gray-200);
+  `;
+  
+  const titleSpan = document.createElement("span");
+  titleSpan.textContent = `${scene.charAt(0).toUpperCase() + scene.slice(1)} Phrases`;
+  titleSpan.style.cssText = `
+    font-weight: 600;
+    color: var(--gray-800);
+    font-size: var(--text-lg);
+  `;
+  
+  const moreBtn = document.createElement("button");
+  moreBtn.textContent = "🔄 More Phrases";
+  moreBtn.className = "more-phrases-btn";
+  moreBtn.style.cssText = `
+    background: var(--primary-500);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-4);
+    font-weight: 600;
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  `;
+  
+  moreBtn.addEventListener("click", async () => {
+    moreBtn.disabled = true;
+    moreBtn.textContent = "🔄 Loading...";
+    moreBtn.style.opacity = "0.7";
+    
+    try {
+      // Clear current phrases to force fresh generation
+      delete phrasePacks[scene];
+      await loadAIPhrases();
+      renderPhrases();
+      toast("🎉 Fresh phrases loaded for " + scene + "!");
+      GAMIFY.awardXP(3);
+    } catch (e) {
+      console.error('Failed to load more phrases:', e);
+      toast("Couldn't load new phrases. Try again! 🔄");
+    } finally {
+      moreBtn.disabled = false;
+      moreBtn.textContent = "🔄 More Phrases";
+      moreBtn.style.opacity = "1";
+    }
+  });
+  
+  moreBtn.addEventListener("mouseenter", () => {
+    if (!moreBtn.disabled) {
+      moreBtn.style.background = "var(--primary-600)";
+      moreBtn.style.transform = "translateY(-1px)";
+    }
+  });
+  
+  moreBtn.addEventListener("mouseleave", () => {
+    moreBtn.style.background = "var(--primary-500)";
+    moreBtn.style.transform = "translateY(0)";
+  });
+  
+  headerDiv.appendChild(titleSpan);
+  headerDiv.appendChild(moreBtn);
+  phrasesBar.appendChild(headerDiv);
+  
   if (pack.length === 0) {
     console.log('No phrases found, attempting to load AI phrases');
-    phrasesBar.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 20px;">Loading personalized phrases... 🤖</p>';
+    const loadingDiv = document.createElement("div");
+    loadingDiv.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 20px;">Loading personalized phrases... 🤖</p>';
+    phrasesBar.appendChild(loadingDiv);
     // Try to load AI phrases for this scene
     setTimeout(async () => {
       await loadAIPhrases();
@@ -422,6 +499,14 @@ function renderPhrases() {
     }, 100);
     return;
   }
+  
+  // Create phrases container
+  const phrasesContainer = document.createElement("div");
+  phrasesContainer.style.cssText = `
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  `;
   
   console.log('Rendering', pack.length, 'phrases');
   pack.forEach(p => {
@@ -469,8 +554,10 @@ function renderPhrases() {
       e.preventDefault();
       b.style.transform = "scale(1)";
     });
-    phrasesBar.appendChild(b);
+    phrasesContainer.appendChild(b);
   });
+  
+  phrasesBar.appendChild(phrasesContainer);
 }
 
 sceneSel.addEventListener("change", () => {

@@ -282,6 +282,21 @@ header {
   color: var(--primary-700);
 }
 
+.more-phrases-btn:hover {
+  background: var(--primary-600) !important;
+  transform: translateY(-1px) !important;
+}
+
+.more-phrases-btn:active {
+  transform: translateY(0) !important;
+}
+
+.more-phrases-btn:disabled {
+  opacity: 0.7 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
 /* Chat */
 .chat {
   background: white;
