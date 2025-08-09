@@ -1,7 +1,0 @@
-{
-  "routes": {
-    "/api/roleplay": "server/roleplay.js",
-    "/api/stt": "server/stt.js"
-  },
-  "static": "public"
-}

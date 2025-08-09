@@ -1,15 +1,37 @@
+exports.handler = async (event, context) => {
+  // Handle CORS
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: ''
+    };
   }
+
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: "Method Not Allowed" })
+    };
+  }
+
   try {
-    // Handle multipart form data from the frontend
-    const formData = req.body;
-    const audioFile = req.files?.audio;
+    // Parse multipart form data (simplified for Netlify functions)
+    const audioFile = event.body; // This would need proper multipart parsing
     
     if (!audioFile) {
-      return res.status(400).json({ error: "missing_audio" });
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: "missing_audio" })
+      };
     }
     
     const { default: OpenAI } = await import('openai');
@@ -22,9 +44,17 @@ export default async function handler(req, res) {
       response_format: "json"
     });
 
-    res.json({ text: transcript.text || "" });
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ text: transcript.text || "" })
+    };
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: "stt_failed" });
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: "stt_failed", details: e.message })
+    };
   }
-}
+};

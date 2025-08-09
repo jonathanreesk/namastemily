@@ -1,16 +1,35 @@
+exports.handler = async (event, context) => {
+  // Handle CORS
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: ''
+    };
   }
+
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: "Method Not Allowed" })
+    };
+  }
+
   try {
-    const { history = [], scene = "market", level = "beginner" } = req.body;
+    const { history = [], scene = "market", level = "beginner" } = JSON.parse(event.body || '{}');
 
     const { readFile } = await import('fs/promises');
     const path = await import('path');
     
-    const scenes = JSON.parse(await readFile(path.join(process.cwd(), 'server/scenes.json'), 'utf8'));
-    const persona = await readFile(path.join(process.cwd(), 'server/persona.txt'), 'utf8');
+    const scenes = JSON.parse(await readFile(path.join(__dirname, 'scenes.json'), 'utf8'));
+    const persona = await readFile(path.join(__dirname, 'persona.txt'), 'utf8');
 
     const scenePersona = scenes[scene] || scenes.market;
     const system = [
@@ -34,9 +53,17 @@ export default async function handler(req, res) {
     });
     const reply = resp.choices?.[0]?.message?.content || "Namaste, Emily! Kaise madad karun? (How can I help?)";
 
-    res.json({ reply });
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ reply })
+    };
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: "roleplay_failed" });
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: "roleplay_failed", details: e.message })
+    };
   }
-}
+};
