@@ -356,9 +356,44 @@ async function loadStaticPhrases() {
 async function loadAIPhrases() {
   try {
     console.log('Loading AI phrases for scene:', sceneSel?.value);
-    // Skip AI phrase generation in development - use static phrases instead  
-    console.log('Development mode: skipping AI phrase generation, using static phrases');
-    return; // Simply return without throwing error
+    const scene = sceneSel?.value || 'market';
+    const level = levelSel?.value || 'beginner';
+    
+    const resp = await fetch(`${API}/api/missions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: 'suggestions',
+        userProgress: {
+          scene: scene,
+          level: level,
+          xp: GAMIFY.state.xp || 0,
+          streak: GAMIFY.state.streak || 0
+        }
+      })
+    });
+    
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}`);
+    }
+    
+    const suggestions = await resp.json();
+    console.log('AI suggestions received:', suggestions);
+    
+    // Convert AI suggestions to phrase format
+    if (Array.isArray(suggestions) && suggestions.length > 0) {
+      phrasePacks[scene] = suggestions.map(s => ({
+        englishIntro: s.englishIntro,
+        hindiPhrase: s.hindiPhrase,
+        englishMeaning: s.englishMeaning,
+        pronunciation: s.pronunciation,
+        culturalNote: s.culturalNote
+      }));
+      console.log('AI phrases loaded for scene:', scene, 'Count:', phrasePacks[scene].length);
+    } else {
+      console.log('No AI suggestions received, will fallback to static');
+      throw new Error('No AI suggestions received');
+    }
     
   } catch (e) {
     console.error('AI phrase generation failed with error:', e);
@@ -430,12 +465,17 @@ function renderPhrases() {
       delete phrasePacks[scene];
       console.log('Cleared phrases for scene:', scene);
       await loadAIPhrases();
-      renderPhrases();
-      toast("🎉 Fresh phrases loaded for " + scene + "!");
-      GAMIFY.awardXP(3);
+      
+      if (phrasePacks[scene] && phrasePacks[scene].length > 0) {
+        renderPhrases();
+        toast("🎉 Fresh AI phrases loaded for " + scene + "!");
+        GAMIFY.awardXP(3);
+      } else {
+        toast("⚠️ Couldn't load new phrases. Using existing ones.");
+      }
     } catch (e) {
       console.error('Failed to load more phrases:', e);
-      toast("Couldn't load new phrases. Try again! 🔄");
+      toast("⚠️ AI unavailable. Check your API key in Netlify settings! 🔧");
     } finally {
       moreBtn.disabled = false;
       moreBtn.innerHTML = `
@@ -913,9 +953,37 @@ const MISSIONS = {
   
   async generateDaily() {
     try {
-      // Skip AI mission generation in development - use fallback missions
-      console.log('Development mode: using fallback mission');
-      return this.getFallbackMission();
+      console.log('Generating AI mission for scene:', sceneSel?.value);
+      const scene = sceneSel?.value || 'market';
+      
+      const resp = await fetch(`${API}/api/missions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: 'mission',
+          userProgress: {
+            scene: scene,
+            level: levelSel?.value || 'beginner',
+            xp: GAMIFY.state.xp || 0,
+            streak: GAMIFY.state.streak || 0,
+            scenes: GAMIFY.state.scenes || {}
+          }
+        })
+      });
+      
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}`);
+      }
+      
+      const mission = await resp.json();
+      console.log('AI mission generated:', mission);
+      
+      if (mission && mission.title) {
+        this.currentMission = mission;
+        return mission;
+      } else {
+        throw new Error('Invalid mission format received');
+      }
     } catch (error) {
       console.warn('Mission generation failed, using fallback mission:', error);
       return this.getFallbackMission();
