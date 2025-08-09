@@ -72,12 +72,12 @@ exports.handler = async (event, context) => {
       const rate = slow ? "-10%" : "0%";
       const ssml = `
 <speak version="1.0" xml:lang="en-US" xmlns:mstts="https://www.w3.org/2001/mstts">
-  <voice name="en-US-JennyNeural">
+  <voice name="en-US-AriaNeural">
     <prosody rate="${rate}">
       ${englishPart}
       <break time="300ms"/>
       <lang xml:lang="hi-IN">
-        <voice name="hi-IN-SwaraNeural">
+        <voice name="hi-IN-MadhurNeural">
           ${processedHindi}
         </voice>
       </lang>
@@ -196,7 +196,7 @@ exports.handler = async (event, context) => {
       // Pure Hindi content - use Hindi voice with phoneme corrections
       ssml = `
 <speak version="1.0" xml:lang="hi-IN" xmlns:mstts="https://www.w3.org/2001/mstts">
-  <voice name="hi-IN-SwaraNeural">
+  <voice name="hi-IN-MadhurNeural">
     <prosody rate="${rate}">
       ${processedText}
     </prosody>
@@ -206,7 +206,7 @@ exports.handler = async (event, context) => {
       // English content - use friendly American English voice
       ssml = `
 <speak version="1.0" xml:lang="en-US" xmlns:mstts="https://www.w3.org/2001/mstts">
-  <voice name="en-US-JennyNeural">
+  <voice name="en-US-AriaNeural">
     <prosody rate="${rate}">
       ${processedText}
     </prosody>
