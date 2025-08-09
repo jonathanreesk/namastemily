@@ -138,11 +138,10 @@ function render() {
 }
 
 function speak(text) {
-  // Stop any currently playing audio first
-  stopAllAudio();
-  
   // Try browser TTS first since it's more reliable
   if ("speechSynthesis" in window) {
+    // Stop any currently playing audio first
+    stopAllAudio();
     speakWithBrowser(text);
   } else {
     toast("Audio not available on this device 📱");
@@ -165,39 +164,47 @@ function stopAllAudio() {
 
 function speakWithBrowser(text) {
   try {
+    // Force cancel any existing speech
     window.speechSynthesis.cancel();
     
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "hi-IN";
-    utterance.rate = 0.7;
-    utterance.pitch = 1.0;
-    utterance.volume = 0.9;
-    
-    // Try to find the best Hindi voice available
-    const voices = window.speechSynthesis.getVoices();
-    const hindiVoice = voices.find(voice => 
-      voice.lang.includes('hi') || 
-      voice.name.toLowerCase().includes('hindi') ||
-      voice.name.toLowerCase().includes('india')
-    );
-    
-    if (hindiVoice) {
-      utterance.voice = hindiVoice;
-      console.log('Using Hindi voice:', hindiVoice.name);
-    } else {
-      console.log('No Hindi voice found, using default');
-    }
-    
-    utterance.onstart = () => {
-      toast("🔊 Playing Hindi audio!");
-    };
-    
-    utterance.onerror = (e) => {
-      console.error('Speech synthesis error:', e);
-      toast("Audio playback failed 📱");
-    };
-    
-    window.speechSynthesis.speak(utterance);
+    // Small delay to ensure cancellation takes effect
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "hi-IN";
+      utterance.rate = 0.7;
+      utterance.pitch = 1.0;
+      utterance.volume = 0.9;
+      
+      // Try to find the best Hindi voice available
+      const voices = window.speechSynthesis.getVoices();
+      const hindiVoice = voices.find(voice => 
+        voice.lang.includes('hi') || 
+        voice.name.toLowerCase().includes('hindi') ||
+        voice.name.toLowerCase().includes('india')
+      );
+      
+      if (hindiVoice) {
+        utterance.voice = hindiVoice;
+        console.log('Using Hindi voice:', hindiVoice.name);
+      } else {
+        console.log('No Hindi voice found, using default');
+      }
+      
+      utterance.onstart = () => {
+        toast("🔊 Playing Hindi audio!");
+      };
+      
+      utterance.onerror = (e) => {
+        console.error('Speech synthesis error:', e);
+        toast("Audio playback failed 📱");
+      };
+      
+      utterance.onend = () => {
+        console.log('Speech synthesis ended');
+      };
+      
+      window.speechSynthesis.speak(utterance);
+    }, 100);
     
   } catch (e) {
     console.error('Browser TTS failed:', e);
@@ -238,7 +245,11 @@ async function send() {
     addMsg("assistant", reply);
     
     // Auto-speak the response
-    setTimeout(() => speak(reply), 500);
+    setTimeout(() => {
+      // Stop any existing speech before auto-speaking
+      stopAllAudio();
+      speak(reply);
+    }, 500);
     
     // Award XP and update gamification
     GAMIFY.awardXP(5);
