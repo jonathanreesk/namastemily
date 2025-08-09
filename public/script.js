@@ -45,7 +45,7 @@ function addMsg(role, content) {
 
 async function speakWithAzure(text) {
   try {
-    toast("🔊 Generating Delhi-style Hindi voice with Azure...");
+    toast("🔊 Generating authentic Delhi Hindi with phoneme corrections...");
     
     const resp = await fetch(`${API}/api/tts-azure`, {
       method: "POST",
@@ -64,7 +64,7 @@ async function speakWithAzure(text) {
     const audio = new Audio(url);
     
     audio.onplay = () => {
-      toast("🔊 Aasha Aunty speaking in Delhi Hindi via Azure...");
+      toast("🔊 Aasha Aunty speaking with proper मैं/में pronunciation!");
     };
     
     audio.onended = () => {

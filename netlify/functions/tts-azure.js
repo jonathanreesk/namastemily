@@ -43,19 +43,52 @@ export async function handler(event) {
       };
     }
 
+    // Apply Hindi phoneme corrections for proper pronunciation
+    function applyHindiPhonemes(s) {
+      // Force correct pronunciation for common confusing words
+      return s
+        // मैं = I → /mɛ̃/ (like "meh" with nasal)
+        .replace(/मैं/g, '<phoneme alphabet="ipa" ph="mɛ̃">मैं</phoneme>')
+        // में = in → /meː̃/ (long "me" with nasal)
+        .replace(/में/g, '<phoneme alphabet="ipa" ph="meː̃">में</phoneme>')
+        // हूँ = am → /huː̃/ (proper nasal)
+        .replace(/हूँ/g, '<phoneme alphabet="ipa" ph="huː̃">हूँ</phoneme>')
+        // हैं = are → /hɛ̃/ (proper nasal)
+        .replace(/हैं/g, '<phoneme alphabet="ipa" ph="hɛ̃">हैं</phoneme>');
+    }
+
+    // Normalize common Hinglish to Devanagari
+    function normalizeHinglishToDev(text) {
+      return text
+        .replace(/\bmein\b/gi, 'में')
+        .replace(/\bmain\b/gi, 'मैं')
+        .replace(/\bhai\b/gi, 'है')
+        .replace(/\bhun\b/gi, 'हूँ');
+    }
     // Simple heuristic: if Devanagari present, treat as Hindi; else Indian English.
     const isHindi = /[\u0900-\u097F]/.test(text);
+    
+    // Apply corrections based on content type
+    let processedText;
+    if (isHindi) {
+      processedText = applyHindiPhonemes(text);
+    } else {
+      // Convert common Hinglish to Devanagari, then apply phonemes
+      const normalized = normalizeHinglishToDev(text);
+      const hasHindiAfterNorm = /[\u0900-\u097F]/.test(normalized);
+      processedText = hasHindiAfterNorm ? applyHindiPhonemes(normalized) : normalized;
+    }
 
     // SSML: Delhi-style Hindi as primary; Indian English for any embedded English.
     // You can feed fully-Hindi text for best effect.
     const rate = slow ? "-10%" : "0%";
     const ssml = `
-<speak version="1.0" xml:lang="hi-IN">
+<speak version="1.0" xml:lang="hi-IN" xmlns:mstts="https://www.w3.org/2001/mstts">
   <voice name="hi-IN-SwaraNeural">
     <prosody rate="${rate}">
-      ${isHindi
-        ? text
-        : `<lang xml:lang="en-IN"><voice name="en-IN-NeerjaNeural">${text}</voice></lang>`}
+      ${(isHindi || /[\u0900-\u097F]/.test(processedText))
+        ? processedText
+        : `<lang xml:lang="en-IN"><voice name="en-IN-NeerjaNeural">${processedText}</voice></lang>`}
     </prosody>
   </voice>
 </speak>`.trim();
