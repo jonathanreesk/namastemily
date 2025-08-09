@@ -11,6 +11,7 @@
     "node-fetch": "^2.7.0"
   },
   "devDependencies": {
-    "http-server": "^14.1.1"
+    "http-server": "^14.1.1",
+    "netlify-cli": "^17.0.0"
   }
 }
