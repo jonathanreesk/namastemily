@@ -58,66 +58,6 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Check if this is a Hindi phrase for pronunciation (contains Devanagari)
-    const isHindiPhrase = /[\u0900-\u097F]/.test(text);
-    
-    // For mixed content (English + Hindi), use structured SSML
-    if (text.includes('|HINDI|')) {
-      const parts = text.split('|HINDI|');
-      const englishPart = parts[0] || '';
-      const hindiPart = parts[1] || '';
-      
-      const processedHindi = applyHindiPhonemes(hindiPart);
-      
-      const rate = slow ? "-10%" : "0%";
-      const ssml = `
-<speak version="1.0" xml:lang="en-US" xmlns:mstts="https://www.w3.org/2001/mstts">
-  <voice name="en-US-AriaNeural">
-    <prosody rate="${rate}">
-      ${englishPart}
-      <break time="300ms"/>
-      <lang xml:lang="hi-IN">
-        <voice name="hi-IN-MadhurNeural">
-          ${processedHindi}
-        </voice>
-      </lang>
-    </prosody>
-  </voice>
-</speak>`.trim();
-
-      const url = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Ocp-Apim-Subscription-Key": key,
-          "Content-Type": "application/ssml+xml",
-          "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3",
-        },
-        body: ssml
-      });
-
-      if (!resp.ok) {
-        const errText = await resp.text();
-        return {
-          statusCode: 500,
-          headers,
-          body: JSON.stringify({ error: `azure_speech_failed: ${errText}` })
-        };
-      }
-
-      const buf = Buffer.from(await resp.arrayBuffer());
-      return {
-        statusCode: 200,
-        headers: {
-          ...headers,
-          "Content-Type": "audio/mpeg",
-          "Cache-Control": "public, max-age=3600"
-        },
-        body: buf.toString("base64"),
-        isBase64Encoded: true,
-      };
-    }
-
     // Apply Hindi phoneme corrections for proper pronunciation
     function applyHindiPhonemes(s) {
       // Force correct pronunciation for common confusing words
@@ -156,63 +96,21 @@ exports.handler = async (event, context) => {
         .replace(/चलेंगे/g, '<phoneme alphabet="ipa" ph="t͡ʃəleːŋɡe">चलेंगे</phoneme>');
     }
 
-    // Normalize common Hinglish to Devanagari
-    function normalizeHinglishToDev(text) {
-      return text
-        .replace(/\bmain\b/gi, 'मैं')
-        .replace(/\bmein\b/gi, 'में')
-        .replace(/\bnahi\b/gi, 'नहीं')
-        .replace(/\byahan\b/gi, 'यहाँ')
-        .replace(/\bwahan\b/gi, 'वहाँ')
-        .replace(/\bthoda\b/gi, 'थोड़ा')
-        .replace(/\bzyada\b/gi, 'ज़्यादा')
-        .replace(/\bkripya\b/gi, 'कृपया')
-        .replace(/\bdhanyavaad\b/gi, 'धन्यवाद')
-        .replace(/\bchahiye\b/gi, 'चाहिए')
-        .replace(/\bkiraya\b/gi, 'किराया')
-        .replace(/\bchahiye\b/gi, 'चाहिए')
-        .replace(/\bkiraya\b/gi, 'किराया')
-        .replace(/\blenge\b/gi, 'लेंगे')
-        .replace(/\bchalenge\b/gi, 'चलेंगे')
-        .replace(/\bhai\b/gi, 'है')
-        .replace(/\bhun\b/gi, 'हूँ');
-    }
-    // Apply corrections based on content type
-    let processedText;
-    if (isHindiPhrase) {
-      processedText = applyHindiPhonemes(text);
-    } else {
-      // Convert common Hinglish to Devanagari, then apply phonemes
-      const normalized = normalizeHinglishToDev(text);
-      const hasHindiAfterNorm = /[\u0900-\u097F]/.test(normalized);
-      processedText = hasHindiAfterNorm ? applyHindiPhonemes(normalized) : normalized;
-    }
-
-    // Choose voice based on content
+    // Apply Hindi phoneme corrections to any Devanagari text
+    const processedText = applyHindiPhonemes(text);
+    
+    // Use natural Delhi Hindi voice for everything with slower pace for learning
     const rate = slow ? "-10%" : "0%";
     
-    let ssml;
-    if (isHindiPhrase) {
-      // Pure Hindi content - use Hindi voice with phoneme corrections
-      ssml = `
+    // Use hi-IN-SwaraNeural for natural Delhi Hindi intonation on all content
+    const ssml = `
 <speak version="1.0" xml:lang="hi-IN" xmlns:mstts="https://www.w3.org/2001/mstts">
-  <voice name="hi-IN-MadhurNeural">
+  <voice name="hi-IN-SwaraNeural">
     <prosody rate="${rate}">
       ${processedText}
     </prosody>
   </voice>
 </speak>`.trim();
-    } else {
-      // English content - use friendly American English voice
-      ssml = `
-<speak version="1.0" xml:lang="en-US" xmlns:mstts="https://www.w3.org/2001/mstts">
-  <voice name="en-US-AriaNeural">
-    <prosody rate="${rate}">
-      ${processedText}
-    </prosody>
-  </voice>
-</speak>`.trim();
-    }
 
     const url = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
     const resp = await fetch(url, {
