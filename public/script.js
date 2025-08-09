@@ -367,8 +367,8 @@ async function loadAIPhrases() {
         userProgress: {
           scene: scene,
           level: level,
-          xp: GAMIFY.state.xp || 0,
-          streak: GAMIFY.state.streak || 0
+          xp: GAMIFY.state?.xp || 0,
+          streak: GAMIFY.state?.streak || 0
         }
       })
     });
@@ -804,8 +804,6 @@ sceneSel.addEventListener("change", () => {
   }
 });
 
-window.addEventListener("load", loadPhrases);
-
 // ===== GAMIFICATION SYSTEM =====
 const streakEl = document.getElementById("streak");
 const xpEl = document.getElementById("xp");
@@ -964,9 +962,9 @@ const MISSIONS = {
           userProgress: {
             scene: scene,
             level: levelSel?.value || 'beginner',
-            xp: GAMIFY.state.xp || 0,
-            streak: GAMIFY.state.streak || 0,
-            scenes: GAMIFY.state.scenes || {}
+            xp: GAMIFY.state?.xp || 0,
+            streak: GAMIFY.state?.streak || 0,
+            scenes: GAMIFY.state?.scenes || {}
           }
         })
       });
