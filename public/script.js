@@ -241,10 +241,13 @@ async function send() {
     }
     
     const data = await resp.json();
-    addMsg("assistant", data.reply);
+    
+    // Handle both successful responses and error responses with reply field
+    const reply = data.reply || data.error || "Sorry, something went wrong!";
+    addMsg("assistant", reply);
     
     // Auto-speak the response
-    setTimeout(() => speak(data.reply), 500);
+    setTimeout(() => speak(reply), 500);
     
     // Award XP and update gamification
     GAMIFY.awardXP(5);
@@ -252,7 +255,7 @@ async function send() {
     
   } catch (e) {
     console.error('Send error:', e);
-    addMsg("assistant", "Sorry, I'm having trouble connecting right now. Please check that your API key is set up correctly and try again. 🔧");
+    addMsg("assistant", "Sorry Emily! I'm having trouble connecting to my AI brain right now. Please make sure your OPENAI_API_KEY is configured in Netlify's environment variables under Site settings → Environment variables. 🔧");
   } finally {
     sendBtn.classList.remove('loading');
     sendBtn.disabled = false;

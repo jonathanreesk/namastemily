@@ -6,6 +6,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export const handler = async (event, context) => {
+  console.log('Roleplay function called with method:', event.httpMethod);
+  console.log('Environment check:', {
+    hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+    keyLength: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0
+  });
+
   // Handle CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -40,7 +46,8 @@ export const handler = async (event, context) => {
         headers,
         body: JSON.stringify({ 
           error: "missing_api_key", 
-          details: "OpenAI API key not configured" 
+          details: "OpenAI API key not configured. Please add OPENAI_API_KEY to your Netlify environment variables.",
+          reply: "Hi Emily! I need my OpenAI API key to be configured in Netlify's environment variables to chat with you. Please add your OPENAI_API_KEY in the Netlify dashboard under Site settings → Environment variables. 🔧"
         })
       };
     }
@@ -84,12 +91,14 @@ export const handler = async (event, context) => {
     const { OpenAI } = await import('openai');
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     
+    console.log('Making OpenAI API call with model: gpt-4o-mini');
     const resp = await client.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.6,
       messages
     });
     
+    console.log('OpenAI API response received');
     const reply = resp.choices?.[0]?.message?.content || "Namaste, Emily! Kaise madad karun? (How can I help?)";
 
     return {
@@ -99,13 +108,14 @@ export const handler = async (event, context) => {
     };
   } catch (e) {
     console.error('Roleplay function error:', e);
+    console.error('Error stack:', e.stack);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({ 
         error: "roleplay_failed", 
         details: e.message,
-        stack: e.stack 
+        reply: `Sorry Emily! I'm having trouble connecting to my AI brain right now. Error: ${e.message}. Please make sure the OPENAI_API_KEY is set in Netlify environment variables. 🔧`
       })
     };
   }
