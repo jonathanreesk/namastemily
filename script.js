@@ -47,17 +47,17 @@ function render() {
 }
 
 function speak(text) {
-  speakWithOpenAI(text);
+  speakWithAzure(text);
 }
 
-async function speakWithOpenAI(text) {
+async function speakWithAzure(text) {
   try {
-    toast("🔊 Generating natural Hindi voice...");
+    toast("🔊 Generating Delhi-style Hindi voice...");
     
     const resp = await fetch(`${API}/api/tts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text })
+      body: JSON.stringify({ text, slow: true })
     });
     
     if (!resp.ok) throw new Error("TTS failed");
@@ -67,7 +67,7 @@ async function speakWithOpenAI(text) {
     const audio = new Audio(url);
     
     audio.onplay = () => {
-      toast("🔊 Aasha Aunty speaking...");
+      toast("🔊 Aasha Aunty speaking in Delhi Hindi...");
     };
     
     audio.onended = () => {
@@ -81,10 +81,10 @@ async function speakWithOpenAI(text) {
     await audio.play();
     
   } catch (e) {
-    console.warn('OpenAI TTS failed, falling back to browser TTS:', e);
+    console.warn('Azure TTS failed, falling back to browser TTS:', e);
     toast("Falling back to browser voice...");
     
-    // Fallback to browser TTS if server TTS fails
+    // Fallback to browser TTS if Azure TTS fails
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       
