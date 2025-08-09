@@ -195,6 +195,13 @@ async function speakWithAzure(text) {
     if (!resp.ok) {
       let errorText;
       try {
+          // Stop any audio before auto-speaking scene change response
+          setTimeout(() => {
+            stopAllAudio();
+            if (/[\u0900-\u097F]/.test(data.reply)) {
+              speak(data.reply);
+            }
+          }, 500);
         errorText = await resp.text();
       } catch (e) {
         errorText = `HTTP ${resp.status}`;
@@ -398,8 +405,6 @@ function renderPhrases() {
     b.setAttribute("ontouchstart", ""); // Enable :active on iOS
     b.addEventListener("click", () => {
       input.value = p.tr;
-      // Stop any audio before speaking the phrase
-      stopAllAudio();
       speak(p.hi); // Speak the Hindi phrase when clicked
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
