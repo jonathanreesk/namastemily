@@ -139,7 +139,7 @@ function addMsg(role, content) {
     `;
   }
   chat.appendChild(div);
-  render();
+  chat.scrollTop = chat.scrollHeight;
 }
 
 async function speakWithAzure(text) {
@@ -764,41 +764,9 @@ function render() {
     chat.appendChild(div);
   });
   
-  render();
+  chat.scrollTop = chat.scrollHeight;
 }
 
 function speak(text) {
   speakWithAzure(text);
-  history.forEach(m => {
-    const div = document.createElement("div");
-    div.className = `msg ${m.role}`;
-    
-    // Store original for TTS, transliterate for display
-    const originalContent = m.content;
-    const displayContent = transliterateHindi(m.content);
-    
-    if (m.role === "assistant") {
-      div.innerHTML = `
-        <div class="msg-header">
-          <span class="speaker">Asha Aunty:</span>
-          <button class="listen-btn" onclick="speak('${originalContent.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
-                  ontouchstart="" style="cursor: pointer;">
-            <span>🔊</span>
-          </button>
-        </div>
-        <div class="msg-content">${displayContent}</div>
-      `;
-    } else {
-      div.innerHTML = `
-        <div class="msg-header">
-          <span class="speaker">You:</span>
-        </div>
-        <div class="msg-content">${displayContent}</div>
-      `;
-    }
-    
-    chat.appendChild(div);
-  });
-  
-  chat.scrollTop = chat.scrollHeight;
 }
