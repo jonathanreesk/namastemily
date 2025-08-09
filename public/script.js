@@ -509,6 +509,10 @@ sceneSel.addEventListener("change", () => {
         });
         
         if (resp.ok) {
+        }
+      }
+    }
+    )
     setTimeout(() => {
       speak(reply);
     }, 500);
