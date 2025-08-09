@@ -426,27 +426,35 @@ function renderPhrases() {
   `;
   
   const moreBtn = document.createElement("button");
-  moreBtn.textContent = "🔄 More Phrases";
+  moreBtn.innerHTML = `
+    <span class="btn-icon">✨</span>
+    <span class="btn-text">Get New Phrases</span>
+  `;
   moreBtn.className = "more-phrases-btn";
   moreBtn.style.cssText = `
     background: var(--primary-500);
     color: white;
     border: none;
-    border-radius: var(--radius-md);
-    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-6);
     font-weight: 600;
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: 48px;
   `;
   
   moreBtn.addEventListener("click", async () => {
     console.log('More phrases button clicked');
     moreBtn.disabled = true;
-    moreBtn.textContent = "🔄 Loading...";
+    moreBtn.innerHTML = `
+      <span class="btn-icon loading-spinner">⏳</span>
+      <span class="btn-text">Loading...</span>
+    `;
     moreBtn.style.opacity = "0.7";
     
     try {
@@ -462,7 +470,10 @@ function renderPhrases() {
       toast("Couldn't load new phrases. Try again! 🔄");
     } finally {
       moreBtn.disabled = false;
-      moreBtn.textContent = "🔄 More Phrases";
+      moreBtn.innerHTML = `
+        <span class="btn-icon">✨</span>
+        <span class="btn-text">Get New Phrases</span>
+      `;
       moreBtn.style.opacity = "1";
     }
   });
@@ -479,13 +490,15 @@ function renderPhrases() {
   moreBtn.addEventListener("mouseenter", () => {
     if (!moreBtn.disabled) {
       moreBtn.style.background = "var(--primary-600)";
-      moreBtn.style.transform = "translateY(-1px)";
+      moreBtn.style.transform = "translateY(-2px)";
+      moreBtn.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.15)";
     }
   });
   
   moreBtn.addEventListener("mouseleave", () => {
     moreBtn.style.background = "var(--primary-500)";
     moreBtn.style.transform = "translateY(0)";
+    moreBtn.style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.1)";
   });
   
   headerDiv.appendChild(titleSpan);
