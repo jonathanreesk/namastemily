@@ -103,11 +103,6 @@ function speak(text) {
 
 async function speakWithAzure(text) {
   try {
-    // Check if Azure credentials are available
-    if (!process.env.AZURE_SPEECH_KEY) {
-      throw new Error("Azure TTS not configured - using browser TTS");
-    }
-    
     toast("🔊 Playing audio...");
     
     const resp = await fetch(`${API}/api/tts-azure`, {
