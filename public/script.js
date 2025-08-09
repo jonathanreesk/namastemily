@@ -1,4 +1,4 @@
-const API = location.origin.replace(/\/$/, "");
+const API = ""; // Use relative paths for local development
 
 // Hindi to Latin transliteration mapping
 const TRANSLITERATION_MAP = {
