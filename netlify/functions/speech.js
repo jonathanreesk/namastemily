@@ -154,6 +154,10 @@ exports.handler = async (event, context) => {
         // future/plural polite "will take/go"
         .replace(/लेंगे/g, '<phoneme alphabet="ipa" ph="leːŋɡe">लेंगे</phoneme>')
         .replace(/चलेंगे/g, '<phoneme alphabet="ipa" ph="t͡ʃəleːŋɡe">चलेंगे</phoneme>');
+        
+        // future/plural polite "will take/go"
+        .replace(/लेंगे/g, '<phoneme alphabet="ipa" ph="leːŋɡe">लेंगे</phoneme>')
+        .replace(/चलेंगे/g, '<phoneme alphabet="ipa" ph="t͡ʃəleːŋɡe">चलेंगे</phoneme>');
     }
 
     // Normalize common Hinglish to Devanagari
@@ -170,6 +174,8 @@ exports.handler = async (event, context) => {
         .replace(/\bdhanyavaad\b/gi, 'धन्यवाद')
         .replace(/\bchahiye\b/gi, 'चाहिए')
         .replace(/\bkiraya\b/gi, 'किराया')
+        .replace(/\blenge\b/gi, 'लेंगे')
+        .replace(/\bchalenge\b/gi, 'चलेंगे')
         .replace(/\blenge\b/gi, 'लेंगे')
         .replace(/\bchalenge\b/gi, 'चलेंगे')
         .replace(/\bhai\b/gi, 'है')
