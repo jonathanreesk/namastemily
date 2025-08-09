@@ -114,12 +114,29 @@ function render() {
 }
 
 function speak(text) {
+  // Stop any currently playing audio first
+  stopAllAudio();
+  
   // Try browser TTS first since it's more reliable
   if ("speechSynthesis" in window) {
     speakWithBrowser(text);
   } else {
     toast("Audio not available on this device 📱");
   }
+}
+
+function stopAllAudio() {
+  // Stop browser speech synthesis
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+  
+  // Stop any HTML5 audio elements
+  const audioElements = document.querySelectorAll('audio');
+  audioElements.forEach(audio => {
+    audio.pause();
+    audio.currentTime = 0;
+  });
 }
 
 function speakWithBrowser(text) {
@@ -278,6 +295,8 @@ async function send() {
     setTimeout(() => {
       // Only auto-speak if it contains Hindi text
       if (/[\u0900-\u097F]/.test(data.reply)) {
+        // Stop any currently playing audio before auto-speaking
+        stopAllAudio();
         speak(data.reply);
       }
     }, 500);
