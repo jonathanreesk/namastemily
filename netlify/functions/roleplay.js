@@ -1,9 +1,4 @@
-import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { OpenAI } from 'openai';
 
 export const handler = async (event, context) => {
   console.log('Roleplay function called with method:', event.httpMethod);
@@ -41,8 +36,6 @@ export const handler = async (event, context) => {
     // Check if OpenAI API key is available
     if (!process.env.OPENAI_API_KEY) {
       console.error('OpenAI API key not found in environment variables');
-      console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('OPENAI')));
-      console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('OPENAI')));
       return {
         statusCode: 500,
         headers,
@@ -56,38 +49,42 @@ export const handler = async (event, context) => {
 
     // Log API key status (first 8 chars only for security)
     console.log('OpenAI API key found:', process.env.OPENAI_API_KEY.substring(0, 8) + '...');
-    console.log('API key length:', process.env.OPENAI_API_KEY.length);
 
-    // Log API key status (first 8 chars only for security)
-    console.log('OpenAI API key found:', process.env.OPENAI_API_KEY.substring(0, 8) + '...');
-    console.log('API key length:', process.env.OPENAI_API_KEY.length);
+    // Define scene personas directly in the function
+    const scenes = {
+      market: "You are a friendly Hindi teacher helping Emily learn market vocabulary. Speak in English, introducing Hindi phrases for buying vegetables, asking prices, and being polite. Example: 'Let's learn how to ask for tomatoes! In Hindi, you say...' Then teach the phrase with clear pronunciation guidance.",
+      taxi: "You are teaching Emily essential taxi phrases in Hindi. Use English to explain each phrase's meaning and when to use it. Focus on practical phrases like asking destinations, discussing fare, and being polite to drivers.",
+      neighbor: "You're helping Emily learn neighborly conversation in Hindi. Teach greetings, introductions, and polite small talk in English first, then provide the Hindi phrases with pronunciation help.",
+      church: "You're teaching Emily respectful Hindi phrases for church interactions. Explain cultural context in English, then teach appropriate greetings and responses for church community members.",
+      rickshaw: "You're teaching Emily rickshaw negotiation phrases. Explain in English how bargaining works culturally, then teach the Hindi phrases for destinations, prices, and polite requests.",
+      introductions: "You're helping Emily learn how to introduce herself and her family in Hindi. Start with English explanations of what to say, then teach the Hindi phrases step by step."
+    };
 
-    // Read files from the correct location in Netlify build
-    let scenes, persona;
-    try {
-      const scenesPath = join(__dirname, '..', '..', 'server', 'scenes.json');
-      const personaPath = join(__dirname, '..', '..', 'server', 'persona.txt');
-      
-      scenes = JSON.parse(readFileSync(scenesPath, 'utf8'));
-      persona = readFileSync(personaPath, 'utf8');
-    } catch (fileError) {
-      console.error('Error reading server files:', fileError);
-      // Fallback to inline content if files can't be read
-      scenes = {
-        market: "You are a friendly Hindi teacher helping Emily learn market vocabulary. Speak in English, introducing Hindi phrases for buying vegetables, asking prices, and being polite.",
-        taxi: "You are teaching Emily essential taxi phrases in Hindi. Use English to explain each phrase's meaning and when to use it.",
-        neighbor: "You're helping Emily learn neighborly conversation in Hindi. Teach greetings, introductions, and polite small talk in English first, then provide the Hindi phrases.",
-        church: "You're teaching Emily respectful Hindi phrases for church interactions. Explain cultural context in English, then teach appropriate greetings.",
-        rickshaw: "You're teaching Emily rickshaw negotiation phrases. Explain in English how bargaining works culturally, then teach the Hindi phrases.",
-        introductions: "You're helping Emily learn how to introduce herself and her family in Hindi. Start with English explanations, then teach the Hindi phrases."
-      };
-      persona = "You are Aasha Aunty, a warm, encouraging Hindi teacher who speaks primarily in clear American English. Your role is to speak in friendly, motivating English as your primary language, introduce Hindi words and phrases with clear English explanations, and act like a patient language tutor.";
-    }
+    const persona = `You are Aasha Aunty, a warm, encouraging Hindi teacher who speaks primarily in clear American English.
+
+Your role:
+- Speak in friendly, motivating English as your primary language
+- Introduce Hindi words and phrases with clear English explanations
+- Use the teaching flow: introduce → explain → pronounce → encourage repetition → gentle correction
+- Act like a patient language tutor, not a native speaker expecting fluency
+- Keep tone encouraging and supportive - celebrate small wins!
+- Break down complex phrases into smaller parts Emily can handle
+- Use cultural context to make learning memorable and practical
+
+Teaching approach:
+- Start each lesson with: "Let's learn how to say [concept] in Hindi"
+- Explain the meaning clearly in English first
+- Then provide the Hindi phrase for pronunciation practice
+- Encourage Emily to repeat and practice
+- Give gentle corrections with encouragement: "Close! Try emphasizing the [sound]. You're doing great!"
+- Connect phrases to real situations Emily will encounter in India
+
+CRITICAL: Always speak in English first, then teach Hindi phrases. Never start conversations in Hindi.`;
 
     const scenePersona = scenes[scene] || scenes.market;
     const system = [
       persona,
-      "Persona scene:", scenePersona,
+      "Scene context:", scenePersona,
       level === "beginner" ? "Use very simple sentences and slow pace." : "Use simple sentences; allow a bit more variety.",
       "Start with a friendly greeting and a clear question."
     ].join("\n");
@@ -97,13 +94,10 @@ export const handler = async (event, context) => {
       ...history
     ];
 
-    // Use dynamic import for OpenAI
-    const { OpenAI } = await import('openai');
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    
     console.log('Making OpenAI API call with model: gpt-4o-mini');
     console.log('Messages being sent:', JSON.stringify(messages, null, 2));
-    console.log('Messages being sent:', JSON.stringify(messages, null, 2));
+    
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     
     const resp = await client.chat.completions.create({
       model: "gpt-4o-mini",
@@ -112,8 +106,6 @@ export const handler = async (event, context) => {
     });
     
     console.log('OpenAI API response received');
-    console.log('Response status:', resp);
-    console.log('Response status:', resp);
     const reply = resp.choices?.[0]?.message?.content || "Namaste, Emily! Kaise madad karun? (How can I help?)";
 
     return {
@@ -124,15 +116,6 @@ export const handler = async (event, context) => {
   } catch (e) {
     console.error('Roleplay function error:', e);
     console.error('Error stack:', e.stack);
-    console.error('Error name:', e.name);
-    console.error('Error message:', e.message);
-    
-    // Check if it's an OpenAI API error
-    if (e.status) {
-      console.error('OpenAI API status:', e.status);
-      console.error('OpenAI API error:', e.error);
-    }
-    
     console.error('Error name:', e.name);
     console.error('Error message:', e.message);
     
