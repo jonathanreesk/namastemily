@@ -603,22 +603,61 @@ const MISSIONS = {
         body: JSON.stringify({ type: 'mission', userProgress })
       });
       
-      if (!resp.ok) throw new Error('Failed to generate mission');
+      if (!resp.ok) {
+        console.warn('Mission API failed, using fallback mission');
+        return this.getFallbackMission();
+      }
       
-      const mission = await resp.json();
-      this.currentMission = mission;
-      return mission;
-    } catch (e) {
-      console.error('Mission generation failed:', e);
-      // Fallback to static mission
-      return {
-        scene: "market",
-        title: "Market Practice",
-        description: "Practice basic market conversation in Hindi",
-        specificGoals: ["Ask for vegetables", "Practice polite phrases"],
-        culturalTip: "Gentle bargaining is normal in Indian markets"
-      };
+      try {
+        const mission = await resp.json();
+        if (mission.error) {
+          console.warn('Mission API returned error, using fallback mission');
+          return this.getFallbackMission();
+        }
+        state.dailyMission = mission;
+        state.lastMissionDate = today;
+        saveState();
+        return mission;
+      } catch (parseError) {
+        console.warn('Failed to parse mission response, using fallback mission');
+        return this.getFallbackMission();
+      }
+    } catch (error) {
+      console.warn('Mission generation failed, using fallback mission:', error);
+      return this.getFallbackMission();
     }
+  },
+  
+  getFallbackMission() {
+    const fallbackMissions = [
+      {
+        scene: "market",
+        title: "Buy Fresh Vegetables",
+        description: "Visit the local sabzi mandi and practice asking for seasonal vegetables in Hindi",
+        specificGoals: ["Ask for 2 vegetables", "Negotiate price politely", "Ask if items are fresh"],
+        culturalTip: "In Indian markets, gentle bargaining is expected and shows engagement"
+      },
+      {
+        scene: "taxi",
+        title: "Navigate to Temple",
+        description: "Take a taxi to the local temple and practice giving directions in Hindi",
+        specificGoals: ["Tell driver destination", "Ask about fare", "Say thank you"],
+        culturalTip: "Always confirm the fare before starting your journey"
+      },
+      {
+        scene: "neighbor",
+        title: "Meet Your Neighbor",
+        description: "Introduce yourself to a new neighbor and practice basic conversation",
+        specificGoals: ["Share your name", "Ask about their family", "Exchange pleasantries"],
+        culturalTip: "Indians appreciate when foreigners make an effort to speak Hindi"
+      }
+    ];
+    
+    const mission = fallbackMissions[Math.floor(Math.random() * fallbackMissions.length)];
+    state.dailyMission = mission;
+    state.lastMissionDate = new Date().toDateString();
+    saveState();
+    return mission;
   },
   
   async render() {
