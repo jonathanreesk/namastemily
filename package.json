@@ -1,12 +1,5 @@
 {
-  "name": "project",
+  "name": "namaste-emily",
   "version": "1.0.0",
-  "description": "This is a Bolt-ready Hindi learning pilot for Emily.",
-  "main": "script.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "type": "module"
 }
