@@ -114,10 +114,8 @@ async function speakWithAzure(text) {
     });
     
     if (!resp.ok) {
-      const errorData = await resp.json().catch(() => ({}));
-      console.error('Speech API error:', resp.status, errorData);
       const errorText = await resp.text();
-      console.error('Speech API error:', errorText);
+      console.error('Speech API error:', resp.status, errorText);
       throw new Error(`Speech API failed: ${errorText}`);
     }
     
