@@ -297,6 +297,8 @@ function renderPhrases() {
   }
   
   pack.forEach(p => {
+    const b = document.createElement("button");
+    b.className = "phrase-btn";
     b.textContent = p.englishIntro || p.hindiPhrase;
     b.title = p.englishMeaning || p.englishIntro;
     b.style.cursor = "pointer";
