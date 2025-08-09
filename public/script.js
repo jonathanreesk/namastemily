@@ -107,7 +107,7 @@ async function speakWithAzure(text) {
   try {
     toast("🔊 Generating authentic Delhi Hindi with phoneme corrections...");
     
-    const resp = await fetch(\`${API}/api/tts-azure`, {
+    const resp = await fetch(`${API}/api/tts-azure`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, slow: true })
@@ -116,7 +116,7 @@ async function speakWithAzure(text) {
     if (!resp.ok) {
       const errorText = await resp.text();
       console.error('Azure TTS error:', errorText);
-      throw new Error(\`Azure TTS failed: ${errorText}`);
+      throw new Error(`Azure TTS failed: ${errorText}`);
     }
     
     const blob = await resp.blob();
@@ -186,7 +186,7 @@ async function send() {
   input.value = "";
 
   try {
-    const resp = await fetch(\`${API}/api/roleplay`, {
+    const resp = await fetch(`${API}/api/roleplay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -197,7 +197,7 @@ async function send() {
     });
     
     if (!resp.ok) {
-      throw new Error(\`HTTP ${resp.status}`);
+      throw new Error(`HTTP ${resp.status}`);
     }
     
     const data = await resp.json();
@@ -295,8 +295,8 @@ async function recordAndSendToServer() {
         fd.append("audio", blob, "audio.webm");
         
         try {
-          const resp = await fetch(\`${API}/api/stt`, { method: "POST", body: fd });
-          if (!resp.ok) throw new Error(\`HTTP ${resp.status}`);
+          const resp = await fetch(`${API}/api/stt`, { method: "POST", body: fd });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
           
           const data = await resp.json();
           input.value = data.text || "";
@@ -357,6 +357,7 @@ function renderPhrases() {
     const b = document.createElement("button");
     b.textContent = p.hi;
     b.title = \`${p.en} (${p.tr})`;
+    b.title = `${p.en} (${p.tr})`;
     b.style.cursor = "pointer";
     b.setAttribute("ontouchstart", ""); // Enable :active on iOS
     b.addEventListener("click", () => {
@@ -545,7 +546,7 @@ const MISSIONS = {
   
   render() {
     const m = this.pick();
-    missionText.textContent = \`${m.text} (Scene: ${m.scene})`;
+    missionText.textContent = `${m.text} (Scene: ${m.scene})`;
     sceneSel.value = m.scene;
     renderPhrases();
   },
