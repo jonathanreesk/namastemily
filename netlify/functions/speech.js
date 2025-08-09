@@ -195,13 +195,11 @@ exports.handler = async (event, context) => {
     if (isHindiPhrase) {
       // Pure Hindi content - use Hindi voice with phoneme corrections
       ssml = `
-<speak version="1.0" xml:lang="en-US" xmlns:mstts="https://www.w3.org/2001/mstts">
-  <voice name="en-US-AriaNeural">
-    <lang xml:lang="hi-IN">
+<speak version="1.0" xml:lang="hi-IN" xmlns:mstts="https://www.w3.org/2001/mstts">
+  <voice name="hi-IN-MadhurNeural">
     <prosody rate="${rate}">
       ${processedText}
     </prosody>
-    </lang>
   </voice>
 </speak>`.trim();
     } else {

@@ -109,11 +109,6 @@ render();
 
 function addMsg(role, content) {
   history.push({ role, content });
-  
-  // Store original Hindi for TTS, create transliterated version for display
-  const originalContent = content;
-  const displayContent = transliterateHindi(content);
-  
   const div = document.createElement("div");
   div.className = `msg ${role}`;
   
@@ -122,22 +117,18 @@ function addMsg(role, content) {
   if (role === "assistant") {
     div.innerHTML = `
       <div class="msg-header">
-        <span class="speaker">${prefix.split(':')[0]}:</span>
-        <button class="listen-btn" onclick="speak('${originalContent.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
+        <strong>${prefix.split(':')[0]}:</strong>
+        <button class="listen-btn" onclick="speak('${content.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
                 ontouchstart="" style="cursor: pointer;">
           <span>🔊</span>
         </button>
       </div>
-      <div class="msg-content">${displayContent}</div>
+      <div class="msg-content">${content}</div>
     `;
   } else {
-    div.innerHTML = `
-      <div class="msg-header">
-        <span class="speaker">You:</span>
-      </div>
-      <div class="msg-content">${displayContent}</div>
-    `;
+    div.innerHTML = `<strong>${prefix.split(':')[0]}:</strong> ${content}`;
   }
+  
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
 }
@@ -776,28 +767,19 @@ function render() {
     const div = document.createElement("div");
     div.className = `msg ${m.role}`;
     
-    // Store original for TTS, transliterate for display
-    const originalContent = m.content;
-    const displayContent = transliterateHindi(m.content);
-    
     if (m.role === "assistant") {
       div.innerHTML = `
         <div class="msg-header">
-          <span class="speaker">Asha Aunty:</span>
-          <button class="listen-btn" onclick="speak('${originalContent.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
+          <strong>Asha Aunty:</strong>
+          <button class="listen-btn" onclick="speak('${m.content.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
                   ontouchstart="" style="cursor: pointer;">
             <span>🔊</span>
           </button>
         </div>
-        <div class="msg-content">${displayContent}</div>
+        <div class="msg-content">${m.content}</div>
       `;
     } else {
-      div.innerHTML = `
-        <div class="msg-header">
-          <span class="speaker">You:</span>
-        </div>
-        <div class="msg-content">${displayContent}</div>
-      `;
+      div.innerHTML = `<strong>You:</strong> ${m.content}`;
     }
     
     chat.appendChild(div);
