@@ -345,42 +345,9 @@ async function loadStaticPhrases() {
 async function loadAIPhrases() {
   try {
     console.log('Loading AI phrases for scene:', sceneSel?.value);
-    const currentScene = sceneSel?.value || 'market';
-    const currentLevel = levelSel?.value || 'beginner';
-    
-    const userProgress = {
-      scene: currentScene,
-      level: currentLevel,
-      xp: GAMIFY.state?.xp || 0,
-      scenes: GAMIFY.state?.scenes || {},
-      phrasesTapped: GAMIFY.state?.phrasesTapped || 0
-    };
-    
-    console.log(`Generating AI phrases for ${currentScene} scene at ${currentLevel} level`);
-    const resp = await fetch(`${API}/api/missions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: 'suggestions', userProgress })
-    });
-    
-    if (!resp.ok) {
-      const errorText = await resp.text();
-      console.error('AI phrase generation failed:', resp.status, errorText);
-      throw new Error('Failed to generate suggestions');
-    }
-    
-    const suggestions = await resp.json();
-    console.log('AI suggestions received:', JSON.stringify(suggestions, null, 2));
-    
-    // Convert AI suggestions to phrase pack format
-    const scene = currentScene;
-    if (Array.isArray(suggestions) && suggestions.length > 0) {
-      phrasePacks[scene] = suggestions;
-      console.log(`Successfully stored ${suggestions.length} AI phrases for ${scene} scene`);
-    } else {
-      console.error('Invalid AI suggestions format - not an array or empty:', suggestions);
-      throw new Error('Invalid suggestions format');
-    }
+    // Skip AI phrase generation in development - use static phrases instead
+    console.log('Development mode: skipping AI phrase generation, using static phrases');
+    throw new Error('Development mode - using static phrases');
     
   } catch (e) {
     console.error('AI phrase generation failed with error:', e);
@@ -935,43 +902,9 @@ const MISSIONS = {
   
   async generateDaily() {
     try {
-      const currentScene = sceneSel?.value || 'market';
-      const currentLevel = levelSel?.value || 'beginner';
-      
-      const userProgress = {
-        scene: currentScene,
-        level: currentLevel,
-        xp: GAMIFY.state?.xp || 0,
-        scenes: GAMIFY.state?.scenes || {},
-        streak: GAMIFY.state?.streak || 0,
-        completedToday: GAMIFY.state?.missionCompletedToday || false,
-        phrasesTapped: GAMIFY.state?.phrasesTapped || 0
-      };
-      
-      console.log(`Generating daily mission for ${currentScene} scene at ${currentLevel} level`);
-      const resp = await fetch(`${API}/api/missions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: 'mission', userProgress })
-      });
-      
-      if (!resp.ok) {
-        console.warn('Mission API failed, using fallback mission');
-        return this.getFallbackMission();
-      }
-      
-      try {
-        const mission = await resp.json();
-        if (mission.error) {
-          console.warn('Mission API returned error, using fallback mission');
-          return this.getFallbackMission();
-        }
-        this.currentMission = mission;
-        return mission;
-      } catch (parseError) {
-        console.warn('Failed to parse mission response, using fallback mission');
-        return this.getFallbackMission();
-      }
+      // Skip AI mission generation in development - use fallback missions
+      console.log('Development mode: using fallback mission');
+      return this.getFallbackMission();
     } catch (error) {
       console.warn('Mission generation failed, using fallback mission:', error);
       return this.getFallbackMission();
