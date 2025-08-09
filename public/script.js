@@ -337,14 +337,47 @@ let phrasePacks = {};
 
 async function loadPhrases() {
   try {
-    const resp = await fetch("phrases.json");
-    phrasePacks = await resp.json();
+    // Try to load AI-generated phrases first
+    await loadAIPhrases();
+    
+    // Fallback to static phrases if AI fails
+    if (Object.keys(phrasePacks).length === 0) {
+      const resp = await fetch("phrases.json");
+      phrasePacks = await resp.json();
+    }
     renderPhrases();
   } catch (e) {
     console.warn("Could not load phrases:", e);
   }
 }
 
+async function loadAIPhrases() {
+  try {
+    const userProgress = {
+      scene: sceneSel?.value || 'market',
+      level: levelSel?.value || 'beginner',
+      xp: GAMIFY.state?.xp || 0,
+      scenes: GAMIFY.state?.scenes || {}
+    };
+    
+    const resp = await fetch(`${API}/api/missions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: 'suggestions', userProgress })
+    });
+    
+    if (!resp.ok) throw new Error('Failed to generate suggestions');
+    
+    const suggestions = await resp.json();
+    
+    // Convert AI suggestions to phrase pack format
+    const scene = sceneSel?.value || 'market';
+    phrasePacks[scene] = suggestions;
+    
+  } catch (e) {
+    console.warn('AI phrase generation failed:', e);
+  }
+}
 function renderPhrases() {
   const scene = sceneSel.value;
   const pack = phrasePacks[scene] || [];
@@ -352,6 +385,12 @@ function renderPhrases() {
   
   if (pack.length === 0) {
     phrasesBar.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No phrases available for this scene yet 📝</p>';
+    // Try to load AI phrases for this scene
+    loadAIPhrases().then(() => {
+      if (phrasePacks[scene]?.length > 0) {
+        renderPhrases(); // Re-render with new phrases
+      }
+    });
     return;
   }
   
@@ -366,13 +405,24 @@ function renderPhrases() {
     b.addEventListener("click", () => {
       // Create a lesson format: English intro + Hindi phrase
       const lessonText = `${p.englishIntro} |HINDI|${p.hindiPhrase}`;
-      speak(lessonText);
-      input.value = p.pronunciation || p.hindiPhrase;
-      speak(lessonText);
-      input.value = p.pronunciation || p.hindiPhrase;
+      // Add the phrase lesson to chat
+      const lessonMessage = `${p.englishIntro || 'Let me learn this phrase:'} The Hindi is: ${p.hindiPhrase} (${p.pronunciation || 'pronunciation guide'})`;
+      addMsg("user", `Teach me: "${p.englishMeaning || p.englishIntro}"`);
+      
+      // Auto-respond from Asha with the lesson
+      setTimeout(() => {
+        addMsg("assistant", lessonMessage);
+        speak(lessonMessage);
+      }, 500);
+      
+      // Also put the pronunciation in the input for practice
+      setTimeout(() => {
+        input.value = p.pronunciation || p.hindiPhrase;
+      }, 1000);
+      
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
-      toast("Listen to the lesson, then try saying the Hindi phrase! 🗣️");
+      toast("Phrase added to conversation! Practice saying it 🗣️");
     });
     // Add touch event for better mobile response
     b.addEventListener("touchstart", (e) => {
@@ -393,20 +443,30 @@ sceneSel.addEventListener("change", () => {
   // Update greeting based on scene
   if (history.length <= 1) {
     const s = sceneSel.value;
-    let open = "Namaste! Kaise madad karun? (Hello! How can I help?)";
     
-    const greetings = {
-      market: "Great choice! Let's learn essential market phrases. I'll teach you in English first, then we'll practice the Hindi. You'll be buying vegetables like a pro! 🥕",
-      taxi: "Perfect! Taxi phrases are super useful. I'll explain each phrase in English, then teach you the Hindi pronunciation. Let's learn how to get around safely! 🚕", 
-      rickshaw: "Excellent! Rickshaw rides are fun. I'll teach you the English meaning first, then the Hindi phrases for negotiating politely. 🛺",
-      neighbor: "Wonderful! Meeting neighbors is so important. I'll explain what to say in English, then teach you the Hindi greetings and introductions. 👋",
-      introductions: "Perfect choice! I'll help you learn how to introduce yourself and your family. English explanations first, then Hindi practice! 🤝",
-      church: "Great! I'll teach you respectful phrases for church interactions. English context first, then meaningful Hindi phrases! ⛪"
-    };
-    
-    open = greetings[s] || "Hi Emily! I'm here to help you learn Hindi. Which situation would you like to practice?";
-    history = [{ role: "assistant", content: open }];
-    render();
+    // Generate contextual greeting through AI
+    addMsg("user", `I want to practice the ${s} scene. Can you help me?`);
+    setTimeout(async () => {
+      try {
+        const resp = await fetch(`${API}/api/roleplay`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            history: [...history, { role: "user", content: `I want to practice the ${s} scene. Can you help me?` }],
+            scene: s,
+            level: levelSel.value
+          })
+        });
+        
+        if (resp.ok) {
+          const data = await resp.json();
+          addMsg("assistant", data.reply);
+        }
+      } catch (e) {
+        console.error('Scene change error:', e);
+        addMsg("assistant", `Perfect! Let's practice ${s} situations. I'll teach you useful Hindi phrases for this scene step by step! 🌟`);
+      }
+    }, 500);
   }
 });
 
@@ -537,32 +597,71 @@ const GAMIFY = {
 
 // Daily Missions
 const MISSIONS = {
-  pool: [
-    {scene:"market", text:"Buy 2 vegetables and ask about the price politely"},
-    {scene:"rickshaw", text:"Ask for a ride and practice friendly bargaining"},
-    {scene:"introductions", text:"Introduce Jonathan and Sophia to a neighbor"},
-    {scene:"church", text:"Greet an elder respectfully and say thank you"},
-    {scene:"neighbor", text:"Ask a neighbor how long they've lived there"},
-    {scene:"taxi", text:"Ask about fare and request careful driving"}
-  ],
+  currentMission: null,
   
-  pick() {
-    const day = new Date().getDate();
-    return this.pool[day % this.pool.length];
+  async generateDaily() {
+    try {
+      const userProgress = {
+        xp: GAMIFY.state?.xp || 0,
+        scenes: GAMIFY.state?.scenes || {},
+        streak: GAMIFY.state?.streak || 0,
+        completedToday: GAMIFY.state?.missionCompletedToday || false
+      };
+      
+      const resp = await fetch(`${API}/api/missions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: 'mission', userProgress })
+      });
+      
+      if (!resp.ok) throw new Error('Failed to generate mission');
+      
+      const mission = await resp.json();
+      this.currentMission = mission;
+      return mission;
+    } catch (e) {
+      console.error('Mission generation failed:', e);
+      // Fallback to static mission
+      return {
+        scene: "market",
+        title: "Market Practice",
+        description: "Practice basic market conversation in Hindi",
+        specificGoals: ["Ask for vegetables", "Practice polite phrases"],
+        culturalTip: "Gentle bargaining is normal in Indian markets"
+      };
+    }
   },
   
-  render() {
-    const m = this.pick();
-    missionText.textContent = `${m.text} (Scene: ${m.scene})`;
-    sceneSel.value = m.scene;
+  async render() {
+    const m = this.currentMission || await this.generateDaily();
+    missionText.innerHTML = `
+      <strong>${m.title}</strong><br>
+      ${m.description}
+      ${m.culturalTip ? `<br><em>💡 ${m.culturalTip}</em>` : ''}
+    `;
+    if (m.scene && sceneSel) {
+      sceneSel.value = m.scene;
+    }
     renderPhrases();
   },
   
   complete() {
+    GAMIFY.state.missionCompletedToday = true;
     GAMIFY.awardXP(20);
     GAMIFY.awardChai(1);
+    GAMIFY.save(GAMIFY.state);
     toast("🎯 Mission completed! +20 XP, +1 chai cup!");
     confetti();
+    
+    // Add mission completion to chat
+    const mission = this.currentMission;
+    if (mission) {
+      addMsg("user", `I completed today's mission: ${mission.title}! 🎯`);
+      // Auto-respond from Asha
+      setTimeout(() => {
+        addMsg("assistant", `Wonderful, Emily! You completed "${mission.title}" - that's exactly the kind of practice that will help you feel confident in India. Keep up the great work! 🌟`);
+      }, 1000);
+    }
   }
 };
 
@@ -634,7 +733,7 @@ window.addEventListener("load", () => {
   }
   
   GAMIFY.init();
-  MISSIONS.render();
+  MISSIONS.render(); // This will now generate AI missions
   GAMIFY.checkBadges();
   
   // Welcome message
