@@ -34,9 +34,8 @@ const server = http.createServer((req, res) => {
   // Remove query parameters
   filePath = filePath.split('?')[0];
   
-  // Serve from root directory, remove leading slash
-  const cleanPath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
-  const fullPath = path.join(__dirname, cleanPath);
+  // Serve from root directory
+  const fullPath = path.join(__dirname, filePath.slice(1));
   
   // Get file extension
   const ext = path.extname(filePath).toLowerCase();
