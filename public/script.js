@@ -484,7 +484,7 @@ const GAMIFY = {
     const push = (id, label, emo) => { 
       if (!b[id]) { 
         b[id] = {label, emo, date: new Date().toISOString()}; 
-        toast(\`${emo} Achievement unlocked: ${label}!`); 
+        toast(emo + " Achievement unlocked: " + label + "!"); 
         confetti(); 
       } 
     };
