@@ -4,5 +4,13 @@
   "type": "module",
   "dependencies": {
     "openai": "^4.67.1"
-  }
+  },
+  "description": "This is a Bolt-ready Hindi learning pilot for Emily.",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
