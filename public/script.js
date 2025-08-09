@@ -322,12 +322,26 @@ async function loadPhrases() {
     
     // Fallback to static phrases if AI fails
     if (Object.keys(phrasePacks).length === 0) {
-      const resp = await fetch("phrases.json");
-      phrasePacks = await resp.json();
+      await loadStaticPhrases();
     }
     renderPhrases();
   } catch (e) {
     console.warn("Could not load phrases:", e);
+  }
+}
+
+async function loadStaticPhrases() {
+  try {
+    const resp = await fetch("phrases.json");
+    const staticPhrases = await resp.json();
+    // Merge with existing phrases
+    Object.keys(staticPhrases).forEach(scene => {
+      if (!phrasePacks[scene] || phrasePacks[scene].length === 0) {
+        phrasePhrases[scene] = staticPhrases[scene];
+      }
+    });
+  } catch (e) {
+    console.warn("Could not load static phrases:", e);
   }
 }
 
@@ -346,13 +360,22 @@ async function loadAIPhrases() {
       body: JSON.stringify({ type: 'suggestions', userProgress })
     });
     
-    if (!resp.ok) throw new Error('Failed to generate suggestions');
+    if (!resp.ok) {
+      console.warn('AI phrase generation failed:', resp.status);
+      throw new Error('Failed to generate suggestions');
+    }
     
     const suggestions = await resp.json();
+    console.log('AI suggestions received:', suggestions);
     
     // Convert AI suggestions to phrase pack format
     const scene = sceneSel?.value || 'market';
-    phrasePacks[scene] = suggestions;
+    if (Array.isArray(suggestions) && suggestions.length > 0) {
+      phrasePacks[scene] = suggestions;
+    } else {
+      console.warn('Invalid AI suggestions format:', suggestions);
+      throw new Error('Invalid suggestions format');
+    }
     
   } catch (e) {
     console.warn('AI phrase generation failed:', e);
@@ -364,11 +387,14 @@ function renderPhrases() {
   phrasesBar.innerHTML = "";
   
   if (pack.length === 0) {
-    phrasesBar.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No phrases available for this scene yet 📝</p>';
+    phrasesBar.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 20px;">Loading AI-generated phrases... 🤖</p>';
     // Try to load AI phrases for this scene
     loadAIPhrases().then(() => {
       if (phrasePacks[scene]?.length > 0) {
         renderPhrases(); // Re-render with new phrases
+      } else {
+        // Fallback to static phrases if AI fails
+        loadStaticPhrases().then(() => renderPhrases());
       }
     });
     return;
@@ -377,17 +403,23 @@ function renderPhrases() {
   pack.forEach(p => {
     const b = document.createElement("button");
     b.className = "phrase-btn";
-    b.textContent = p.englishIntro || p.hindiPhrase;
-    b.title = p.englishMeaning || p.englishIntro;
-    b.title = p.englishMeaning || p.englishIntro;
+    // Handle both AI format and static format
+    const displayText = p.englishIntro || p.en || p.hindiPhrase || p.hi;
+    const tooltip = p.englishMeaning || p.en || p.englishIntro;
+    
+    b.textContent = displayText;
+    b.title = tooltip;
     b.style.cursor = "pointer";
     b.setAttribute("ontouchstart", ""); // Enable :active on iOS
     b.addEventListener("click", () => {
       // Create a lesson format: English intro + Hindi phrase
-      const lessonText = `${p.englishIntro} |HINDI|${p.hindiPhrase}`;
+      const englishIntro = p.englishIntro || `Let me teach you: "${p.en || p.englishMeaning}"`;
+      const hindiPhrase = p.hindiPhrase || p.hi;
+      const pronunciation = p.pronunciation || p.tr;
+      
       // Add the phrase lesson to chat
-      const lessonMessage = `${p.englishIntro || 'Let me learn this phrase:'} The Hindi is: ${p.hindiPhrase} (${p.pronunciation || 'pronunciation guide'})`;
-      addMsg("user", `Teach me: "${p.englishMeaning || p.englishIntro}"`);
+      const lessonMessage = `${englishIntro} The Hindi is: ${hindiPhrase}${pronunciation ? ` (${pronunciation})` : ''}`;
+      addMsg("user", `Teach me: "${p.englishMeaning || p.en || p.englishIntro}"`);
       
       // Auto-respond from Asha with the lesson
       setTimeout(() => {
@@ -397,7 +429,7 @@ function renderPhrases() {
       
       // Also put the pronunciation in the input for practice
       setTimeout(() => {
-        input.value = p.pronunciation || p.hindiPhrase;
+        input.value = pronunciation || hindiPhrase;
       }, 1000);
       
       GAMIFY.awardXP(2);
