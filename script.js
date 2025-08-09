@@ -114,7 +114,54 @@ function render() {
 }
 
 function speak(text) {
-  speakWithAzure(text);
+  // Try browser TTS first since it's more reliable
+  if ("speechSynthesis" in window) {
+    speakWithBrowser(text);
+  } else {
+    toast("Audio not available on this device 📱");
+  }
+}
+
+function speakWithBrowser(text) {
+  try {
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "hi-IN";
+    utterance.rate = 0.7;
+    utterance.pitch = 1.0;
+    utterance.volume = 0.9;
+    
+    // Try to find the best Hindi voice available
+    const voices = window.speechSynthesis.getVoices();
+    const hindiVoice = voices.find(voice => 
+      voice.lang.includes('hi') || 
+      voice.name.toLowerCase().includes('hindi') ||
+      voice.name.toLowerCase().includes('india')
+    );
+    
+    if (hindiVoice) {
+      utterance.voice = hindiVoice;
+      console.log('Using Hindi voice:', hindiVoice.name);
+    } else {
+      console.log('No Hindi voice found, using default');
+    }
+    
+    utterance.onstart = () => {
+      toast("🔊 Playing Hindi audio!");
+    };
+    
+    utterance.onerror = (e) => {
+      console.error('Speech synthesis error:', e);
+      toast("Audio playback failed 📱");
+    };
+    
+    window.speechSynthesis.speak(utterance);
+    
+  } catch (e) {
+    console.error('Browser TTS failed:', e);
+    toast("Audio not available on this device 📱");
+  }
 }
 
 async function speakWithAzure(text) {
@@ -228,7 +275,12 @@ async function send() {
     addMsg("assistant", data.reply);
     
     // Auto-speak the response
-    setTimeout(() => speak(data.reply), 500);
+    setTimeout(() => {
+      // Only auto-speak if it contains Hindi text
+      if (/[\u0900-\u097F]/.test(data.reply)) {
+        speak(data.reply);
+      }
+    }, 500);
     
     // Award XP and update gamification
     GAMIFY.awardXP(5);
