@@ -61,7 +61,7 @@ const levelSel = document.getElementById("level");
 const useServerSTT = document.getElementById("useServerSTT");
 
 let history = [
-  { role: "assistant", content: "Namaste Emily ji! Main Asha Aunty hoon. Aaj hum chhota sa jeet lenge—market, rickshaw ya church? (Hello Emily! I'm Asha Aunty. Shall we aim for one small win—market, rickshaw or church?)" }
+  { role: "assistant", content: "Hi Emily! I'm Aasha Aunty, your friendly Hindi teacher. I'm here to help you learn practical Hindi phrases for your time in India. Let's start with something simple - which situation would you like to practice first? Market shopping, taking a taxi, or meeting your neighbors?" }
 ];
 
 // Initialize chat
@@ -354,16 +354,18 @@ function renderPhrases() {
   }
   
   pack.forEach(p => {
-    const b = document.createElement("button");
-    b.title = `${p.en} (${p.tr})`;
+    b.textContent = p.englishIntro || p.hindiPhrase;
+    b.title = p.englishMeaning || p.englishIntro;
     b.style.cursor = "pointer";
     b.setAttribute("ontouchstart", ""); // Enable :active on iOS
     b.addEventListener("click", () => {
-      input.value = p.tr;
-      speak(p.hi); // Speak the Hindi phrase when clicked
+      // Create a lesson format: English intro + Hindi phrase
+      const lessonText = `${p.englishIntro} |HINDI|${p.hindiPhrase}`;
+      speak(lessonText);
+      input.value = p.pronunciation || p.hindiPhrase;
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
-      toast("Phrase added! Try saying it out loud 🗣️");
+      toast("Listen to the lesson, then try saying the Hindi phrase! 🗣️");
     });
     // Add touch event for better mobile response
     b.addEventListener("touchstart", (e) => {
@@ -387,15 +389,15 @@ sceneSel.addEventListener("change", () => {
     let open = "Namaste! Kaise madad karun? (Hello! How can I help?)";
     
     const greetings = {
-      market: "Namaste! Aaj kaun si sabzi chahiye? (Hello! Which vegetables would you like today?) 🥕",
-      taxi: "Namaste! Kahan chalna hai? (Hello! Where to?) 🚕",
-      rickshaw: "Namaste! Kahan le chalun? (Hello! Where should I take you?) 🛺",
-      neighbor: "Namaste beti, kaise ho? (Hello dear, how are you?) 👋",
-      introductions: "Namaste! Aapka parichay dijiyega? (Hello! Please introduce yourself.) 🤝",
-      church: "Prabhu ka shukr hai! Aap kaise hain? (Thanks be to the Lord! How are you?) ⛪"
+      market: "Great choice! Let's learn essential market phrases. You'll be buying vegetables like a pro! 🥕",
+      taxi: "Perfect! Taxi phrases are super useful. Let's learn how to get around safely and politely. 🚕", 
+      rickshaw: "Excellent! Rickshaw rides are fun. Let's learn how to negotiate and be polite. 🛺",
+      neighbor: "Wonderful! Meeting neighbors is so important. Let's learn friendly greetings and introductions. 👋",
+      introductions: "Perfect choice! Introducing yourself and your family is essential. Let's practice! 🤝",
+      church: "Great! Let's learn respectful phrases for church interactions. Very meaningful! ⛪"
     };
     
-    open = greetings[s] || open;
+    open = greetings[s] || "Hi Emily! I'm here to help you learn Hindi. Which situation would you like to practice?";
     history = [{ role: "assistant", content: open }];
     render();
   }
