@@ -21,7 +21,20 @@ function addMsg(role, content) {
   div.className = `msg ${role}`;
   
   const prefix = role === "assistant" ? "Asha Aunty: " : "You: ";
-  div.innerHTML = `<strong>${prefix.split(':')[0]}:</strong> ${content}`;
+  
+  if (role === "assistant") {
+    div.innerHTML = `
+      <div class="msg-header">
+        <strong>${prefix.split(':')[0]}:</strong>
+        <button class="listen-btn" onclick="speak('${content.replace(/'/g, "\\'")}')">
+          <span>🔊</span>
+        </button>
+      </div>
+      <div class="msg-content">${content}</div>
+    `;
+  } else {
+    div.innerHTML = `<strong>${prefix.split(':')[0]}:</strong> ${content}`;
+  }
   
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
@@ -34,12 +47,32 @@ function render() {
 
 function speak(text) {
   if (!("speechSynthesis" in window)) return;
+  
+  // Cancel any ongoing speech
+  window.speechSynthesis.cancel();
+  
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "hi-IN";
-  u.rate = 0.8;
+  u.rate = 0.7;
   u.pitch = 1.1;
-  window.speechSynthesis.cancel();
+  u.volume = 0.9;
+  
+  // Try to find a Hindi voice
+  const voices = window.speechSynthesis.getVoices();
+  const hindiVoice = voices.find(voice => 
+    voice.lang.includes('hi') || 
+    voice.name.toLowerCase().includes('hindi') ||
+    voice.name.toLowerCase().includes('india')
+  );
+  
+  if (hindiVoice) {
+    u.voice = hindiVoice;
+  }
+  
   window.speechSynthesis.speak(u);
+  
+  // Visual feedback
+  toast("🔊 Playing Hindi audio...");
 }
 
 async function send() {
@@ -70,7 +103,9 @@ async function send() {
     
     const data = await resp.json();
     addMsg("assistant", data.reply);
-    speak(data.reply);
+    
+    // Auto-speak the response
+    setTimeout(() => speak(data.reply), 500);
     
     // Award XP and update gamification
     GAMIFY.awardXP(5);
@@ -225,6 +260,7 @@ function renderPhrases() {
     b.title = `${p.en} (${p.tr})`;
     b.addEventListener("click", () => {
       input.value = p.tr;
+      speak(p.hi); // Speak the Hindi phrase when clicked
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
       toast("Phrase added! Try saying it out loud 🗣️");
@@ -459,6 +495,14 @@ function confetti() {
 
 // Initialize everything
 window.addEventListener("load", () => {
+  // Load voices for better Hindi TTS
+  if ('speechSynthesis' in window) {
+    speechSynthesis.getVoices();
+    speechSynthesis.onvoiceschanged = () => {
+      speechSynthesis.getVoices();
+    };
+  }
+  
   GAMIFY.init();
   MISSIONS.render();
   GAMIFY.checkBadges();
