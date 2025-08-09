@@ -6,6 +6,9 @@
     "dev": "vite --host --port 8000",
     "build": "vite build",
     "preview": "vite preview",
+    "dev": "vite --host --port 8000",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
