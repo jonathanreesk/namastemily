@@ -1,5 +1,3 @@
-const { OpenAI } = require('openai');
-
 exports.handler = async (event, context) => {
   console.log('Speech function called');
   console.log('Environment check:', {
