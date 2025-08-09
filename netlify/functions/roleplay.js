@@ -1,5 +1,5 @@
-import { readFileSync } from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
 export const handler = async (event, context) => {
   // Handle CORS
@@ -28,12 +28,12 @@ export const handler = async (event, context) => {
   try {
     const { history = [], scene = "market", level = "beginner" } = JSON.parse(event.body || '{}');
 
-    // Read files from the correct location in Netlify
-    const scenesPath = path.join(process.cwd(), 'server', 'scenes.json');
-    const personaPath = path.join(process.cwd(), 'server', 'persona.txt');
+    // Read files from the correct location in Netlify build
+    const scenesPath = path.join(__dirname, '..', '..', 'server', 'scenes.json');
+    const personaPath = path.join(__dirname, '..', '..', 'server', 'persona.txt');
     
-    const scenes = JSON.parse(readFileSync(scenesPath, 'utf8'));
-    const persona = readFileSync(personaPath, 'utf8');
+    const scenes = JSON.parse(fs.readFileSync(scenesPath, 'utf8'));
+    const persona = fs.readFileSync(personaPath, 'utf8');
 
     const scenePersona = scenes[scene] || scenes.market;
     const system = [
