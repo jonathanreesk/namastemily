@@ -1,4 +1,4 @@
-const API = ""; // Use relative paths for local development
+const API = "";
 
 // Hindi to Latin transliteration mapping
 const TRANSLITERATION_MAP = {
