@@ -114,11 +114,6 @@ function addMsg(role, content) {
   const originalContent = content;
   const displayContent = transliterateHindi(content);
   
-  
-  // Store original Hindi for TTS, create transliterated version for display
-  const originalContent = content;
-  const displayContent = transliterateHindi(content);
-  
   const div = document.createElement("div");
   div.className = `msg ${role}`;
   
@@ -143,12 +138,6 @@ function addMsg(role, content) {
       <div class="msg-content">${displayContent}</div>
     `;
   }
-    div.innerHTML = `
-      <div class="msg-header">
-        <span class="speaker">You:</span>
-      </div>
-      <div class="msg-content">${content}</div>
-    `;
   chat.appendChild(div);
   render();
 }
