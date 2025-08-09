@@ -1,5 +1,6 @@
-// netlify/functions/tts-azure.js
-export async function handler(event) {
+const fetch = require('node-fetch');
+
+exports.handler = async (event, context) => {
   // Handle CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -36,10 +37,11 @@ export async function handler(event) {
     const key = process.env.AZURE_SPEECH_KEY;
     const region = process.env.AZURE_SPEECH_REGION;
     if (!key || !region) {
+      console.error('Missing Azure credentials:', { key: !!key, region: !!region });
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ error: "Missing Azure speech env vars" })
+        body: JSON.stringify({ error: "Missing Azure speech environment variables" })
       };
     }
 

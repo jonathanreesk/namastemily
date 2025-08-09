@@ -7,6 +7,7 @@
     "build": "echo 'No build step required - serving static files directly'"
   },
   "dependencies": {
-    "openai": "^4.55.3"
+    "openai": "^4.55.3",
+    "node-fetch": "^2.7.0"
   }
 }
