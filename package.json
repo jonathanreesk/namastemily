@@ -1,17 +1,12 @@
 {
-  "name": "namaste-emily-bolt",
-  "version": "0.1.0",
-  "private": true,
+  "name": "project",
+  "version": "1.0.0",
+  "description": "This is a Bolt-ready Hindi learning pilot for Emily.",
+  "main": "script.js",
   "scripts": {
-    "dev": "netlify dev",
-    "build": "echo 'No build step required - serving static files directly'"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "dependencies": {
-    "openai": "^4.55.3",
-    "node-fetch": "^2.7.0"
-  },
-  "devDependencies": {
-    "http-server": "^14.1.1",
-    "netlify-cli": "^17.0.0"
-  }
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
