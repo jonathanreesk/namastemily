@@ -4,6 +4,18 @@ const path = require('path');
 const http = require('http');
 const url = require('url');
 
+// Load environment variables
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const AZURE_SPEECH_KEY = process.env.AZURE_SPEECH_KEY;
+const AZURE_SPEECH_REGION = process.env.AZURE_SPEECH_REGION;
+
+console.log('Environment check:', {
+  hasOpenAI: !!OPENAI_API_KEY,
+  hasAzureKey: !!AZURE_SPEECH_KEY,
+  hasAzureRegion: !!AZURE_SPEECH_REGION,
+  openAIPreview: OPENAI_API_KEY ? OPENAI_API_KEY.substring(0, 20) + '...' : 'undefined'
+});
+
 const server = http.createServer(async (req, res) => {
   // Handle CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -26,9 +38,9 @@ const server = http.createServer(async (req, res) => {
       req.on('end', async () => {
         const { history = [], scene = "market", level = "beginner" } = JSON.parse(body || '{}');
 
-        if (!process.env.OPENAI_API_KEY) {
+        if (!OPENAI_API_KEY) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: "Missing OpenAI API key" }));
+          res.end(JSON.stringify({ error: "Missing OpenAI API key", debug: "Check environment variables" }));
           return;
         }
 
@@ -62,7 +74,7 @@ const server = http.createServer(async (req, res) => {
           ...history
         ];
 
-        const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const client = new OpenAI({ apiKey: OPENAI_API_KEY });
         
         const response = await client.chat.completions.create({
           model: "gpt-4o-mini",
@@ -88,37 +100,83 @@ const server = http.createServer(async (req, res) => {
       let body = '';
       req.on('data', chunk => body += chunk);
       req.on('end', async () => {
-        const { scene = "market", level = "beginner" } = JSON.parse(body || '{}');
+        const { type, userProgress = {} } = JSON.parse(body || '{}');
 
-        if (!process.env.OPENAI_API_KEY) {
+        if (!OPENAI_API_KEY) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: "Missing OpenAI API key" }));
+          res.end(JSON.stringify({ error: "Missing OpenAI API key", debug: "Check environment variables" }));
           return;
         }
 
-        const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const client = new OpenAI({ apiKey: OPENAI_API_KEY });
         
-        const prompt = `Generate 3 Hindi phrases for ${scene} scenario at ${level} level. Return as JSON array with objects containing 'hindi', 'english', and 'pronunciation' fields.`;
+        let prompt = '';
+        
+        if (type === 'suggestions') {
+          const scene = userProgress.scene || 'market';
+          const level = userProgress.level || 'beginner';
+          prompt = `Generate 4-6 realistic Hindi phrase suggestions for Emily based on her current scene and progress.
+
+Context: American learning Hindi for daily life in India. Progress: ${JSON.stringify(userProgress)}
+Scene: ${scene}, Level: ${level}
+
+Requirements:
+- Phrases should be immediately useful in India
+- Include both English explanation and Hindi phrase
+- Make them culturally appropriate
+- Focus on practical communication
+- Include pronunciation guide
+
+Format as JSON array:
+[
+  {
+    "englishIntro": "When you want to ask if vegetables are fresh at the market",
+    "hindiPhrase": "यह ताज़ा है?",
+    "englishMeaning": "Is this fresh?",
+    "pronunciation": "Yeh taaza hai?"
+  }
+]`;
+        } else {
+          prompt = `Generate a realistic daily Hindi learning mission for Emily. Return as JSON object with scene, title, description, specificGoals array, and culturalTip.`;
+        }
         
         const response = await client.chat.completions.create({
           model: "gpt-4o-mini",
           temperature: 0.7,
-          messages: [{ role: "user", content: prompt }]
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert in Indian culture and Hindi language learning. Generate realistic, culturally authentic content for an American family living in India. Always respond with valid JSON only."
+            },
+            {
+              role: "user", 
+              content: prompt 
+            }
+          ]
         });
         
-        let phrases;
+        let result;
         try {
-          phrases = JSON.parse(response.choices[0].message.content);
+          result = JSON.parse(response.choices[0].message.content);
         } catch {
-          phrases = [
-            { hindi: "नमस्ते", english: "Hello", pronunciation: "namaste" },
-            { hindi: "धन्यवाद", english: "Thank you", pronunciation: "dhanyawad" },
-            { hindi: "कितना पैसा?", english: "How much money?", pronunciation: "kitna paisa?" }
+          result = [
+            { 
+              englishIntro: "A basic greeting everyone should know",
+              hindiPhrase: "नमस्ते", 
+              englishMeaning: "Hello/Goodbye", 
+              pronunciation: "namaste" 
+            },
+            { 
+              englishIntro: "Essential phrase for showing gratitude",
+              hindiPhrase: "धन्यवाद", 
+              englishMeaning: "Thank you", 
+              pronunciation: "dhanyawad" 
+            }
           ];
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ phrases }));
+        res.end(JSON.stringify(result));
       });
     } catch (error) {
       console.error('Missions error:', error);
