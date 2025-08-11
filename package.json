@@ -3,14 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "description": "Interactive Hindi learning app for Emily's journey in India",
+  "type": "module",
   "scripts": {
-    "dev": "python3 -m http.server 8000",
-    "start": "python3 -m http.server 8000",
-    "build": "echo 'Static site ready'",
-    "serve": "python3 -m http.server 8000"
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 4173"
   },
   "dependencies": {
-    "openai": "^4.55.3"
+    "openai": "^4.55.3",
+    "vite": "^5.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
