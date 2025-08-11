@@ -1,8 +1,9 @@
-const { OpenAI } = require('openai');
-const fs = require('fs');
-const path = require('path');
-const http = require('http');
-const url = require('url');
+import OpenAI from 'openai';
+import fs from 'fs';
+import path from 'path';
+import http from 'http';
+import url from 'url';
+import fetch from 'node-fetch';
 
 // Load environment variables
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -47,6 +48,7 @@ const server = http.createServer(async (req, res) => {
         // Read persona and scene files
         let persona, scenes;
         try {
+          const __dirname = path.dirname(new URL(import.meta.url).pathname);
           persona = fs.readFileSync(path.join(__dirname, '..', 'server', 'persona.txt'), 'utf8');
           scenes = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'server', 'scenes.json'), 'utf8'));
         } catch (fileError) {
