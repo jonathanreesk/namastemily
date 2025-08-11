@@ -9,9 +9,18 @@ export default defineConfig({
     open: false,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://127.0.0.1:3001',
         changeOrigin: true,
-        secure: false
+        secure: false,
+        timeout: 10000,
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('Proxy error:', err.message);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('Proxying request:', req.method, req.url);
+          });
+        }
       }
     }
   },
