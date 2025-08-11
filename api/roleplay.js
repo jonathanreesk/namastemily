@@ -1,8 +1,6 @@
 const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
-
-// Simple HTTP handler for Bolt environment
 const http = require('http');
 const url = require('url');
 
@@ -10,7 +8,7 @@ const server = http.createServer(async (req, res) => {
   // Handle CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
@@ -20,6 +18,7 @@ const server = http.createServer(async (req, res) => {
 
   const parsedUrl = url.parse(req.url, true);
   
+  // Handle /api/roleplay endpoint
   if (parsedUrl.pathname === '/api/roleplay' && req.method === 'POST') {
     try {
       let body = '';
@@ -81,9 +80,78 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: "roleplay_failed", details: error.message }));
     }
-  } else {
-    res.writeHead(404);
-    res.end('Not Found');
+  }
+  
+  // Handle /api/missions endpoint
+  else if (parsedUrl.pathname === '/api/missions' && req.method === 'POST') {
+    try {
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', async () => {
+        const { scene = "market", level = "beginner" } = JSON.parse(body || '{}');
+
+        if (!process.env.OPENAI_API_KEY) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: "Missing OpenAI API key" }));
+          return;
+        }
+
+        const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        
+        const prompt = `Generate 3 Hindi phrases for ${scene} scenario at ${level} level. Return as JSON array with objects containing 'hindi', 'english', and 'pronunciation' fields.`;
+        
+        const response = await client.chat.completions.create({
+          model: "gpt-4o-mini",
+          temperature: 0.7,
+          messages: [{ role: "user", content: prompt }]
+        });
+        
+        let phrases;
+        try {
+          phrases = JSON.parse(response.choices[0].message.content);
+        } catch {
+          phrases = [
+            { hindi: "नमस्ते", english: "Hello", pronunciation: "namaste" },
+            { hindi: "धन्यवाद", english: "Thank you", pronunciation: "dhanyawad" },
+            { hindi: "कितना पैसा?", english: "How much money?", pronunciation: "kitna paisa?" }
+          ];
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ phrases }));
+      });
+    } catch (error) {
+      console.error('Missions error:', error);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: "missions_failed", details: error.message }));
+    }
+  }
+  
+  // Handle /api/speech endpoint
+  else if (parsedUrl.pathname === '/api/speech' && req.method === 'POST') {
+    try {
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', async () => {
+        const { text = "", voice = "hi-IN-SwaraNeural" } = JSON.parse(body || '{}');
+
+        // For now, return a mock response since Azure TTS requires specific setup
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          audioUrl: null, 
+          message: "Speech synthesis not configured. Please set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION." 
+        }));
+      });
+    } catch (error) {
+      console.error('Speech error:', error);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: "speech_failed", details: error.message }));
+    }
+  }
+  
+  else {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Not Found' }));
   }
 });
 
