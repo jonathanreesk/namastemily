@@ -4,12 +4,18 @@
 
 [functions]
   directory = "netlify/functions"
+  node_bundler = "esbuild"
 
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
 
-
 [build.environment]
   NODE_VERSION = "18"
+
+[dev]
+  command = "echo 'Development server ready'"
+  port = 8888
+  publish = "public"
+  functions = "netlify/functions"

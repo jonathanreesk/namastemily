@@ -2,16 +2,21 @@
   "name": "namaste-emily-bolt",
   "version": "0.1.0",
   "private": true,
+  "description": "Interactive Hindi learning app for Emily's journey in India",
   "scripts": {
     "dev": "netlify dev",
-    "build": "echo 'No build step required - serving static files directly'"
+    "build": "echo 'Static site build complete'",
+    "start": "netlify dev",
+    "serve": "netlify dev"
   },
   "dependencies": {
     "openai": "^4.55.3",
     "node-fetch": "^2.7.0"
   },
   "devDependencies": {
-    "http-server": "^14.1.1",
     "netlify-cli": "^17.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
