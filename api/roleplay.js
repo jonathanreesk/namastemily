@@ -31,8 +31,10 @@ const server = http.createServer(async (req, res) => {
 
   const parsedUrl = url.parse(req.url, true);
   
+  console.log('Request received:', req.method, parsedUrl.pathname);
+  
   // Handle /api/roleplay endpoint
-  if (parsedUrl.pathname === '/api/roleplay' && req.method === 'POST') {
+  if (req.method === 'POST' && parsedUrl.pathname === '/api/roleplay') {
     try {
       let body = '';
       req.on('data', chunk => body += chunk);
@@ -97,7 +99,7 @@ const server = http.createServer(async (req, res) => {
   }
   
   // Handle /api/missions endpoint
-  else if (parsedUrl.pathname === '/api/missions' && req.method === 'POST') {
+  else if (req.method === 'POST' && parsedUrl.pathname === '/api/missions') {
     try {
       let body = '';
       req.on('data', chunk => body += chunk);
@@ -188,7 +190,7 @@ Format as JSON array:
   }
   
   // Handle /api/speech endpoint
-  else if (parsedUrl.pathname === '/api/speech' && req.method === 'POST') {
+  else if (req.method === 'POST' && parsedUrl.pathname === '/api/speech') {
     try {
       let body = '';
       req.on('data', chunk => body += chunk);
@@ -268,9 +270,21 @@ Format as JSON array:
     }
   }
   
+  // Handle health check
+  else if (req.method === 'GET' && parsedUrl.pathname === '/api/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
+  }
+  
   else {
+    console.log('Route not found:', req.method, parsedUrl.pathname);
     res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Not Found' }));
+    res.end(JSON.stringify({ 
+      error: 'Not Found', 
+      method: req.method, 
+      path: parsedUrl.pathname,
+      availableEndpoints: ['/api/roleplay', '/api/missions', '/api/speech', '/api/health']
+    }));
   }
 });
 
