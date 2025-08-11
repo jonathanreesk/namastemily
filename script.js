@@ -151,6 +151,21 @@ async function speakWithAzure(text) {
     // Store reference to current audio for stopping
     currentAudio = audio;
     
+    // Mobile-specific audio handling
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      // On mobile, we need user interaction to play audio
+      audio.load(); // Preload the audio
+      
+      // Add mobile-specific event handlers
+      audio.addEventListener('canplaythrough', () => {
+        console.log('Audio ready to play on mobile');
+      });
+      
+      audio.addEventListener('loadstart', () => {
+        console.log('Audio loading started on mobile');
+      });
+    }
+    
     audio.onplay = () => {
       toast("🔊 Playing Hindi audio!");
       // Update all listen buttons to show stop icon while playing
@@ -186,21 +201,36 @@ async function speakWithAzure(text) {
       throw new Error("Audio playback failed");
     };
     
-    await audio.play();
+    // Mobile-friendly audio play with better error handling
+    try {
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        await playPromise;
+      }
+    } catch (playError) {
+      console.error('Audio play failed:', playError);
+      if (playError.name === 'NotAllowedError') {
+        toast("🔊 Tap the screen first, then try audio again (mobile requirement)");
+      }
+      throw playError;
+    }
     
   } catch (e) {
     console.error('Speech API failed, falling back to browser TTS:', e);
-    toast(`Azure TTS failed (${e.message}), using browser voice...`);
+    toast(`Azure TTS failed, using browser voice...`);
     
     // Fallback to browser TTS if Azure TTS fails
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       
       const u = new SpeechSynthesisUtterance(text);
+      
+      // Mobile-optimized speech synthesis settings
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       u.lang = "hi-IN";
-      u.rate = 0.6;
+      u.rate = isMobile ? 0.5 : 0.6; // Slower on mobile for better clarity
       u.pitch = 1.0;
-      u.volume = 0.9;
+      u.volume = isMobile ? 1.0 : 0.9; // Full volume on mobile
       
       // Store reference for browser TTS
       currentAudio = { 
@@ -211,17 +241,41 @@ async function speakWithAzure(text) {
       
       // Try to find the best Hindi voice available
       const voices = window.speechSynthesis.getVoices();
-      const hindiVoice = voices.find(voice => 
-        voice.lang.includes('hi') || 
-        voice.name.toLowerCase().includes('hindi') ||
-        voice.name.toLowerCase().includes('india')
-      );
+      let hindiVoice;
+      
+      if (isMobile) {
+        // On mobile, prioritize local voices for better performance
+        hindiVoice = voices.find(voice => 
+          voice.localService && (
+            voice.lang.includes('hi') || 
+            voice.name.toLowerCase().includes('hindi') ||
+            voice.name.toLowerCase().includes('india')
+          )
+        );
+        
+        // Fallback to any Hindi voice if no local voice found
+        if (!hindiVoice) {
+          hindiVoice = voices.find(voice => 
+            voice.lang.includes('hi') || 
+            voice.name.toLowerCase().includes('hindi') ||
+            voice.name.toLowerCase().includes('india')
+          );
+        }
+      } else {
+        hindiVoice = voices.find(voice => 
+          voice.lang.includes('hi') || 
+          voice.name.toLowerCase().includes('hindi') ||
+          voice.name.toLowerCase().includes('india')
+        );
+      }
       
       if (hindiVoice) {
         u.voice = hindiVoice;
+        console.log('Using voice:', hindiVoice.name, hindiVoice.lang, hindiVoice.localService ? '[Local]' : '[Remote]');
       }
       
       u.onstart = () => {
+        console.log('Browser TTS started');
         // Update all listen buttons to show stop icon while playing
         document.querySelectorAll('.listen-btn').forEach(btn => {
           btn.innerHTML = '<span>⏹️</span>';
@@ -230,6 +284,7 @@ async function speakWithAzure(text) {
       };
       
       u.onend = () => {
+        console.log('Browser TTS ended');
         currentAudio = null;
         // Reset all listen buttons back to play icon
         document.querySelectorAll('.listen-btn').forEach(btn => {
@@ -242,6 +297,7 @@ async function speakWithAzure(text) {
       };
       
       u.onerror = () => {
+        console.error('Browser TTS error:', e);
         currentAudio = null;
         // Reset buttons on error
         document.querySelectorAll('.listen-btn').forEach(btn => {
@@ -251,12 +307,20 @@ async function speakWithAzure(text) {
             btn.onclick = () => speak(originalText);
           }
         });
-        toast("Audio not available on this device 📱");
+        toast("Speech not available. Try enabling speech in browser settings 📱");
       };
       
-      window.speechSynthesis.speak(u);
+      // Mobile-specific: Add a small delay before speaking
+      if (isMobile) {
+        setTimeout(() => {
+          window.speechSynthesis.speak(u);
+        }, 100);
+      } else {
+        window.speechSynthesis.speak(u);
+      }
+      
     } else {
-      toast("Audio not available on this device 📱");
+      toast("Speech synthesis not supported on this device 📱");
     }
   }
 }
@@ -671,7 +735,9 @@ window.addEventListener("load", () => {
     // Function to load and display available voices
     const loadVoices = () => {
       const voices = speechSynthesis.getVoices();
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       console.log('Available voices:', voices.map(v => `${v.name} (${v.lang}) ${v.localService ? '[Local]' : '[Remote]'}`));
+      console.log('Device type:', isMobile ? 'Mobile' : 'Desktop');
       
       // Find and log the best Hindi voices
       const hindiVoices = voices.filter(v => 
@@ -683,6 +749,14 @@ window.addEventListener("load", () => {
       
       if (hindiVoices.length > 0) {
         console.log('Hindi/Indian voices found:', hindiVoices.map(v => `${v.name} (${v.lang})`));
+        
+        // On mobile, prioritize local voices
+        if (isMobile) {
+          const localHindiVoices = hindiVoices.filter(v => v.localService);
+          if (localHindiVoices.length > 0) {
+            console.log('Local Hindi voices (recommended for mobile):', localHindiVoices.map(v => v.name));
+          }
+        }
       } else {
         console.log('No Hindi voices detected. Speech will use default voice.');
       }
@@ -692,7 +766,7 @@ window.addEventListener("load", () => {
     loadVoices();
     speechSynthesis.onvoiceschanged = loadVoices;
     
-    // Force voice loading on mobile
+    // Force voice loading on mobile with multiple attempts
     setTimeout(() => {
       const voices = speechSynthesis.getVoices();
       if (voices.length === 0) {
@@ -702,8 +776,37 @@ window.addEventListener("load", () => {
         speechSynthesis.cancel();
         // Try loading again after a delay
         setTimeout(loadVoices, 1000);
+        // Additional attempt for stubborn mobile browsers
+        setTimeout(loadVoices, 3000);
       }
     }, 100);
+    
+    // Mobile-specific: Add user interaction handler to enable audio
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      let audioEnabled = false;
+      
+      const enableAudio = () => {
+        if (!audioEnabled) {
+          // Create a silent audio context to enable audio on mobile
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          audioContext.resume();
+          
+          // Test speech synthesis
+          const testUtterance = new SpeechSynthesisUtterance('');
+          testUtterance.volume = 0;
+          speechSynthesis.speak(testUtterance);
+          speechSynthesis.cancel();
+          
+          audioEnabled = true;
+          console.log('Audio enabled for mobile device');
+        }
+      };
+      
+      // Enable audio on first user interaction
+      document.addEventListener('touchstart', enableAudio, { once: true });
+      document.addEventListener('click', enableAudio, { once: true });
+    }
   }
   
   GAMIFY.init();
@@ -713,5 +816,13 @@ window.addEventListener("load", () => {
   // Welcome message
   setTimeout(() => {
     toast("Welcome to your Hindi learning journey, Emily! 🌟");
+    
+    // Mobile-specific welcome message
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      setTimeout(() => {
+        toast("📱 Tap anywhere to enable audio, then use 🔊 buttons to hear Hindi!");
+      }, 3000);
+    }
   }, 1000);
 });
