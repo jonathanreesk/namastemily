@@ -193,12 +193,71 @@ Format as JSON array:
       req.on('end', async () => {
         const { text = "", voice = "hi-IN-SwaraNeural" } = JSON.parse(body || '{}');
 
-        // For now, return a mock response since Azure TTS requires specific setup
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ 
-          audioUrl: null, 
-          message: "Speech synthesis not configured. Please set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION." 
-        }));
+        if (!AZURE_SPEECH_KEY || !AZURE_SPEECH_REGION) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ 
+            error: "Missing Azure speech credentials",
+            debug: { hasKey: !!AZURE_SPEECH_KEY, hasRegion: !!AZURE_SPEECH_REGION }
+          }));
+          return;
+        }
+
+        try {
+          // Apply Hindi phoneme corrections for proper pronunciation
+          function applyHindiPhonemes(s) {
+            return s
+              .replace(/मैं/g, '<phoneme alphabet="ipa" ph="mɛ̃">मैं</phoneme>')
+              .replace(/में/g, '<phoneme alphabet="ipa" ph="meː̃">में</phoneme>')
+              .replace(/नहीं/g, '<phoneme alphabet="ipa" ph="nəɦĩː">नहीं</phoneme>')
+              .replace(/कृपया/g, '<phoneme alphabet="ipa" ph="kɾɪpjaː">कृपया</phoneme>')
+              .replace(/धन्यवाद/g, '<phoneme alphabet="ipa" ph="d̪ʱənjəʋaːd̪">धन्यवाद</phoneme>')
+              .replace(/नमस्ते/g, '<phoneme alphabet="ipa" ph="nəməsˈteː">नमस्ते</phoneme>')
+              .replace(/चाहिए/g, '<phoneme alphabet="ipa" ph="t͡ʃaːɦije">चाहिए</phoneme>');
+          }
+
+          const isHindiPhrase = /[\u0900-\u097F]/.test(text);
+          const processedText = isHindiPhrase ? applyHindiPhonemes(text) : text;
+          
+          const ssml = `
+<speak version="1.0" xml:lang="${isHindiPhrase ? 'hi-IN' : 'en-US'}" xmlns:mstts="https://www.w3.org/2001/mstts">
+  <voice name="${isHindiPhrase ? 'hi-IN-SwaraNeural' : 'en-US-JennyNeural'}">
+    <prosody rate="-10%">
+      ${processedText}
+    </prosody>
+  </voice>
+</speak>`.trim();
+
+          const url = `https://${AZURE_SPEECH_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`;
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Ocp-Apim-Subscription-Key": AZURE_SPEECH_KEY,
+              "Content-Type": "application/ssml+xml",
+              "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3",
+            },
+            body: ssml
+          });
+
+          if (!response.ok) {
+            throw new Error(`Azure TTS failed: ${response.status}`);
+          }
+
+          const audioBuffer = Buffer.from(await response.arrayBuffer());
+          
+          res.writeHead(200, { 
+            'Content-Type': 'audio/mpeg',
+            'Cache-Control': 'public, max-age=3600'
+          });
+          res.end(audioBuffer);
+          
+        } catch (error) {
+          console.error('Speech synthesis error:', error);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ 
+            error: "speech_synthesis_failed", 
+            details: error.message 
+          }));
+        }
       });
     } catch (error) {
       console.error('Speech error:', error);
