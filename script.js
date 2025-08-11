@@ -93,7 +93,8 @@ function addMsg(role, content) {
     div.innerHTML = `
       <div class="msg-header">
         <strong>${prefix.split(':')[0]}:</strong>
-        <button class="listen-btn" onclick="speak('${content.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
+        <button class="listen-btn" data-original-text="${content.replace(/'/g, "\\'").replace(/"/g, '\\"')}" 
+                onclick="speak('${content.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
                 ontouchstart="" style="cursor: pointer;">
           <span>🔊</span>
         </button>
@@ -147,15 +148,41 @@ async function speakWithAzure(text) {
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     
+    // Store reference to current audio for stopping
+    currentAudio = audio;
+    
     audio.onplay = () => {
       toast("🔊 Playing Hindi audio!");
+      // Update all listen buttons to show stop icon while playing
+      document.querySelectorAll('.listen-btn').forEach(btn => {
+        btn.innerHTML = '<span>⏹️</span>';
+        btn.onclick = () => stopAudio();
+      });
     };
     
     audio.onended = () => {
       URL.revokeObjectURL(url); // Clean up memory
+      currentAudio = null;
+      // Reset all listen buttons back to play icon
+      document.querySelectorAll('.listen-btn').forEach(btn => {
+        const originalText = btn.getAttribute('data-original-text');
+        if (originalText) {
+          btn.innerHTML = '<span>🔊</span>';
+          btn.onclick = () => speak(originalText);
+        }
+      });
     };
     
     audio.onerror = () => {
+      currentAudio = null;
+      // Reset buttons on error
+      document.querySelectorAll('.listen-btn').forEach(btn => {
+        const originalText = btn.getAttribute('data-original-text');
+        if (originalText) {
+          btn.innerHTML = '<span>🔊</span>';
+          btn.onclick = () => speak(originalText);
+        }
+      });
       throw new Error("Audio playback failed");
     };
     
@@ -175,6 +202,13 @@ async function speakWithAzure(text) {
       u.pitch = 1.0;
       u.volume = 0.9;
       
+      // Store reference for browser TTS
+      currentAudio = { 
+        pause: () => window.speechSynthesis.cancel(),
+        currentTime: 0,
+        paused: false
+      };
+      
       // Try to find the best Hindi voice available
       const voices = window.speechSynthesis.getVoices();
       const hindiVoice = voices.find(voice => 
@@ -187,7 +221,36 @@ async function speakWithAzure(text) {
         u.voice = hindiVoice;
       }
       
+      u.onstart = () => {
+        // Update all listen buttons to show stop icon while playing
+        document.querySelectorAll('.listen-btn').forEach(btn => {
+          btn.innerHTML = '<span>⏹️</span>';
+          btn.onclick = () => stopAudio();
+        });
+      };
+      
+      u.onend = () => {
+        currentAudio = null;
+        // Reset all listen buttons back to play icon
+        document.querySelectorAll('.listen-btn').forEach(btn => {
+          const originalText = btn.getAttribute('data-original-text');
+          if (originalText) {
+            btn.innerHTML = '<span>🔊</span>';
+            btn.onclick = () => speak(originalText);
+          }
+        });
+      };
+      
       u.onerror = () => {
+        currentAudio = null;
+        // Reset buttons on error
+        document.querySelectorAll('.listen-btn').forEach(btn => {
+          const originalText = btn.getAttribute('data-original-text');
+          if (originalText) {
+            btn.innerHTML = '<span>🔊</span>';
+            btn.onclick = () => speak(originalText);
+          }
+        });
         toast("Audio not available on this device 📱");
       };
       
@@ -195,6 +258,37 @@ async function speakWithAzure(text) {
     } else {
       toast("Audio not available on this device 📱");
     }
+  }
+}
+
+function stopAudio() {
+  if (currentAudio) {
+    if (currentAudio.pause) {
+      // For HTML5 Audio
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    } else if (currentAudio.cancel) {
+      // For SpeechSynthesis
+      currentAudio.cancel();
+    }
+    
+    // Cancel browser speech synthesis
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    
+    currentAudio = null;
+    
+    // Reset all listen buttons back to play icon
+    document.querySelectorAll('.listen-btn').forEach(btn => {
+      const originalText = btn.getAttribute('data-original-text');
+      if (originalText) {
+        btn.innerHTML = '<span>🔊</span>';
+        btn.onclick = () => speak(originalText);
+      }
+    });
+    
+    toast("🔇 Audio stopped");
   }
 }
 
@@ -255,6 +349,7 @@ input.addEventListener("keydown", (e) => {
 let rec;
 let chunks = [];
 let recognizing = false;
+let currentAudio = null;
 
 micBtn.addEventListener("click", async () => {
   webSpeechDictation();
