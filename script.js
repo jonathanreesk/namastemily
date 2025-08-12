@@ -303,6 +303,47 @@ async function send() {
   }
 }
 
+async function sendPhraseToAI(phraseText) {
+  try {
+    // Add loading state
+    sendBtn.classList.add('loading');
+    sendBtn.disabled = true;
+    
+    // Add phrase to history for AI context
+    history.push({ role: "user", content: phraseText });
+    
+    const resp = await fetch(`/.netlify/functions/roleplay`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        history,
+        scene: sceneSel.value,
+        level: levelSel.value
+      })
+    });
+    
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}`);
+    }
+    
+    const data = await resp.json();
+    addMsg("assistant", data.reply);
+    
+    // Auto-speak the response
+    setTimeout(() => speak(data.reply), 500);
+    
+    // Award XP and update gamification
+    GAMIFY.awardXP(5);
+    GAMIFY.touchScene(sceneSel.value);
+    
+  } catch (e) {
+    console.error('Send phrase error:', e);
+    addMsg("assistant", "I need an OpenAI API key to chat with you! 🔧\n\nTo fix this:\n1. Go to your Netlify site dashboard\n2. Click 'Site settings' → 'Environment variables'\n3. Add OPENAI_API_KEY with your OpenAI API key\n4. Redeploy the site\n\nThe speech features still work with your browser's voice! Try clicking the 🔊 buttons.");
+  } finally {
+    sendBtn.classList.remove('loading');
+    sendBtn.disabled = false;
+  }
+}
 
 sendBtn.addEventListener("click", send);
 input.addEventListener("keydown", (e) => {
@@ -457,7 +498,7 @@ const defaultPhrases = {
 
 let aiPhrasesLoaded = {};
 
-async function loadPhrases() {
+async function loadStaticPhrases() {
   try {
     console.log('Loading static phrases from phrases.json');
     const resp = await fetch("/phrases.json");
@@ -485,12 +526,75 @@ async function loadPhrases() {
   console.log('Final phrase packs:', Object.keys(phrasePacks));
 }
 
+async function loadMorePhrases(scene) {
+  if (aiPhrasesLoaded[scene]) {
+    console.log(`AI phrases already loaded for ${scene}`);
+    renderPhrases();
+    return;
+  }
+  
+  try {
+    toast("🤖 Loading personalized phrases...");
+    
+    const resp = await fetch(`/.netlify/functions/missions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        type: 'suggestions', 
+        userProgress: {
+          scene: scene,
+          level: levelSel.value,
+          xp: GAMIFY.state?.xp || 0
+        }
+      })
+    });
+    
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}`);
+    }
+    
+    const data = await resp.json();
+    console.log('AI phrases received:', data);
+    
+    // Convert AI response to our format
+    if (Array.isArray(data)) {
+      aiPhrasesLoaded[scene] = data.map(p => ({
+        hi: p.hindiPhrase,
+        tr: p.pronunciation || p.displayText,
+        en: p.englishMeaning,
+        intro: p.englishIntro
+      }));
+    } else {
+      aiPhrasesLoaded[scene] = [];
+    }
+    
+    renderPhrases();
+    toast("✨ Personalized phrases loaded!");
+    
+  } catch (e) {
+    console.error('Load phrases error:', e);
+    toast("❌ Could not load AI phrases. Using static phrases.");
+  }
+}
+
+async function loadPhrases() {
+  console.log('Loading phrases...');
+  await loadStaticPhrases();
+  renderPhrases();
+}
 
 function renderPhrases() {
   const scene = sceneSel.value;
-  const pack = phrasePacks[scene] || [];
+  const staticPack = phrasePacks[scene] || [];
+  const aiPack = aiPhrasesLoaded[scene] || [];
   
-  console.log(`Rendering ${pack.length} phrases for scene: ${scene}`);
+  console.log(`Rendering phrases for ${scene}:`, {
+    staticCount: staticPack.length,
+    aiCount: aiPack.length
+  });
+  
+  // Use AI phrases if available, otherwise static
+  const pack = aiPack.length > 0 ? aiPack : staticPack;
   
   phrasesBar.innerHTML = "";
   
@@ -513,12 +617,18 @@ function renderPhrases() {
     b.title = tooltip;
     
     b.addEventListener("click", () => {
-      // Create the practice message
+      // Add the phrase directly to chat and send it
       const phraseText = `I want to practice: "${p.en || p.tr}" (${p.hi})`;
+      addMsg("user", phraseText);
+      input.value = "";
+      addMsg("user", phraseText);
+      input.value = "";
       
-      // Add to input and send normally
-      input.value = phraseText;
-      send();
+      // Send to AI for response
+      sendPhraseToAI(phraseText);
+      
+      // Send to AI for response
+      sendPhraseToAI(phraseText);
       
       // Speak the Hindi phrase
       if (p.hi) {
@@ -532,6 +642,29 @@ function renderPhrases() {
     
     phrasesBar.appendChild(b);
   });
+  
+  // Add "More Phrases" button if AI phrases aren't loaded yet
+  if (aiPack.length === 0 && staticPack.length > 0) {
+    const moreBtn = document.createElement("button");
+    moreBtn.className = "more-phrases-btn";
+    moreBtn.innerHTML = '<span>🤖</span><span>More Phrases</span>';
+    moreBtn.onclick = () => {
+      moreBtn.innerHTML = '<span>⏳</span><span>Loading AI...</span>';
+      moreBtn.disabled = true;
+      loadMorePhrases(scene).finally(() => {
+        moreBtn.disabled = false;
+      });
+    };
+    phrasesBar.appendChild(moreBtn);
+  }
+  
+  // Show AI indicator if AI phrases are loaded
+  if (aiPack.length > 0) {
+    const indicator = document.createElement("div");
+    indicator.className = "ai-indicator";
+    indicator.innerHTML = '<span>🤖</span><span>AI Personalized</span>';
+    phrasesBar.appendChild(indicator);
+  }
 }
 
 sceneSel.addEventListener("change", () => {
@@ -732,9 +865,38 @@ document.getElementById("reviewBtn").addEventListener("click", async () => {
 
 Make it encouraging and specific to my progress in the ${scene} scenario.`;
 
-  input.value = reviewPrompt;
-  await send();
-  GAMIFY.awardXP(10);
+  // Add to chat and send
+  addMsg("user", reviewPrompt);
+  input.value = "";
+  
+  // Send to AI
+  try {
+    const resp = await fetch(`/api/roleplay`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        history,
+        scene: sceneSel.value,
+        level: levelSel.value
+      })
+    });
+    
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}`);
+    }
+    
+    const data = await resp.json();
+    addMsg("assistant", data.reply);
+    
+    // Auto-speak the response
+    setTimeout(() => speak(data.reply), 500);
+    
+    GAMIFY.awardXP(10);
+    
+  } catch (e) {
+    console.error('Review error:', e);
+    addMsg("assistant", "Sorry, I'm having trouble connecting right now. Please check that your API key is set up correctly and try again. 🔧");
+  }
 });
 
 // Test Me Button  
@@ -753,9 +915,38 @@ Please give me:
 
 Make it challenging but encouraging. We've had ${conversationCount} messages in our conversation, so base the test on what we've actually covered. Give me one question at a time and wait for my answer before the next one!`;
 
-  input.value = testPrompt;
-  await send();
-  GAMIFY.awardXP(10);
+  // Add to chat and send
+  addMsg("user", testPrompt);
+  input.value = "";
+  
+  // Send to AI
+  try {
+    const resp = await fetch(`/api/roleplay`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        history,
+        scene: sceneSel.value,
+        level: levelSel.value
+      })
+    });
+    
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}`);
+    }
+    
+    const data = await resp.json();
+    addMsg("assistant", data.reply);
+    
+    // Auto-speak the response
+    setTimeout(() => speak(data.reply), 500);
+    
+    GAMIFY.awardXP(10);
+    
+  } catch (e) {
+    console.error('Test error:', e);
+    addMsg("assistant", "Sorry, I'm having trouble connecting right now. Please check that your API key is set up correctly and try again. 🔧");
+  }
 });
 
 // Toast notifications
