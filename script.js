@@ -452,14 +452,15 @@ const defaultPhrases = {
     { hi: "आशीर्वाद दीजिए", tr: "Aashirvaad dijiye", en: "Please give your blessings" },
     { hi: "जय हो", tr: "Jai ho", en: "Victory/Praise be" }
   ]
-}
+};
 
+// AI-generated phrases (loaded dynamically)
 let aiPhrasesLoaded = {};
 
 async function loadStaticPhrases() {
   try {
     console.log('Loading static phrases from phrases.json');
-    const resp = await fetch("/phrases.json");
+    const resp = await fetch("phrases.json");
     if (resp.ok) {
       const staticPhrases = await resp.json();
       console.log('Static phrases loaded from file:', Object.keys(staticPhrases));
@@ -568,7 +569,10 @@ function renderPhrases() {
     b.className = "phrase-btn";
     
     // Display transliteration for readability
-    const displayText = p.tr || p.en || 'Unknown phrase';
+    let displayText = p.tr || p.en || 'Unknown phrase';
+    // Remove quotes if they exist
+    displayText = displayText.replace(/^['"]|['"]$/g, '');
+    
     const tooltip = p.intro || p.en || 'Hindi phrase';
     
     b.textContent = displayText;
@@ -576,7 +580,10 @@ function renderPhrases() {
     
     b.addEventListener("click", () => {
       // Put transliteration in input for practice
-      input.value = p.tr || p.en;
+      let inputText = p.en || p.tr;
+      inputText = inputText.replace(/^This means\s*/i, '');
+      inputText = inputText.replace(/^['"]|['"]$/g, '');
+      input.value = inputText;
       
       // Speak the Hindi phrase
       if (p.hi) {
@@ -585,7 +592,7 @@ function renderPhrases() {
       
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
-      toast("Phrase added! Try saying it out loud 🗣️");
+      toast(`Added: "${displayText}" - Listen to Hindi pronunciation! 🗣️`);
     });
     
     phrasesBar.appendChild(b);
