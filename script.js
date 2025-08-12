@@ -164,26 +164,49 @@ async function speakWithAzure(text) {
       body: JSON.stringify({ text, slow: true })
     });
     
+    console.log('Azure API response status:', resp.status);
+    console.log('Azure API response headers:', Object.fromEntries(resp.headers.entries()));
+    
     if (!resp.ok) {
       let errorText;
       try {
-        const errorData = await resp.json();
-        errorText = errorData.error || errorData.details || `HTTP ${resp.status}`;
-        console.error('Azure TTS error details:', errorData);
+        errorText = await resp.text();
+        console.error('Azure TTS error response:', errorText);
+        
+        // Try to parse as JSON for better error details
+        try {
+          const errorData = JSON.parse(errorText);
+          console.error('Parsed error data:', errorData);
+          errorText = errorData.error || errorData.details || errorText;
+        } catch (parseError) {
+          console.log('Error response is not JSON, using raw text');
+        }
       } catch (e) {
         errorText = `HTTP ${resp.status}`;
       }
-      console.error('Speech API error:', resp.status, errorText);
+      console.error('AZURE SPEECH API FAILED:', resp.status, errorText);
       throw new Error(`Azure TTS failed: ${errorText}`);
     }
     
     const blob = await resp.blob();
+    console.log('Azure audio blob received, size:', blob.size, 'type:', blob.type);
+    
     if (blob.size === 0) {
       throw new Error("Empty audio response");
     }
     
+    // Verify this is actually audio content
+    if (!blob.type.includes('audio')) {
+      console.error('Response is not audio:', blob.type);
+      const text = await blob.text();
+      console.error('Non-audio response content:', text.substring(0, 200));
+      throw new Error(`Expected audio, got ${blob.type}`);
+    }
+    
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
+    
+    console.log('Created audio element, attempting playback...');
     
     // Store reference to current audio for stopping
     currentAudio = audio;

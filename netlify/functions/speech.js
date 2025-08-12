@@ -56,13 +56,14 @@ exports.handler = async (event, context) => {
         key: !!key, 
         region: !!region,
         keyPreview: key ? key.substring(0, 8) + '...' : 'undefined',
-        allEnvVars: Object.keys(process.env).filter(k => k.includes('AZURE') || k.includes('SPEECH'))
+        allEnvVars: Object.keys(process.env).filter(k => k.includes('AZURE') || k.includes('SPEECH')),
+        message: 'AZURE CREDENTIALS NOT FOUND - WILL NOT WORK'
       });
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
-          error: "Azure speech service not configured. Missing AZURE_SPEECH_KEY or AZURE_SPEECH_REGION environment variables.",
+          error: "AZURE_SPEECH_KEY or AZURE_SPEECH_REGION not set in Netlify environment variables",
           debug: { hasKey: !!key, hasRegion: !!region }
         })
       };
