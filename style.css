@@ -484,14 +484,6 @@ header {
   gap: var(--space-3);
 }
 
-.lesson-actions {
-  display: flex;
-  gap: var(--space-3);
-  margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--gray-200);
-}
-
 .btn {
   border: none;
   border-radius: var(--radius-lg);
@@ -848,6 +840,11 @@ footer {
   }
   
   .actions {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  
+  .lesson-actions {
     flex-direction: column;
     gap: var(--space-2);
   }
