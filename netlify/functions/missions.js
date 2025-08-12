@@ -1,4 +1,8 @@
 exports.handler = async (event, context) => {
+  // Debug all environment variables
+  console.log('Missions - All environment variables:', Object.keys(process.env));
+  console.log('Missions - OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
+  
   // Handle CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -25,21 +29,25 @@ exports.handler = async (event, context) => {
   try {
     const { type, userProgress = {} } = JSON.parse(event.body || '{}');
     
-    // Debug environment variables
-    console.log('Missions environment check:', {
-      hasOpenAI: !!process.env.OPENAI_API_KEY,
-      openAIPreview: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 20) + '...' : 'undefined'
+    const apiKey = process.env.OPENAI_API_KEY;
+    console.log('Missions API Key check:', {
+      exists: !!apiKey,
+      length: apiKey ? apiKey.length : 0,
+      startsWithSk: apiKey ? apiKey.startsWith('sk-') : false
     });
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!apiKey || !apiKey.startsWith('sk-')) {
       console.error('Missing OpenAI API key in missions');
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
-          error: "Missing OpenAI API key",
-          debug: "Please set OPENAI_API_KEY in Netlify environment variables",
-          instructions: "Go to Site settings → Environment variables in Netlify dashboard"
+          error: "Invalid or missing OpenAI API key in missions",
+          debug: {
+            hasKey: !!apiKey,
+            keyLength: apiKey ? apiKey.length : 0,
+            startsWithSk: apiKey ? apiKey.startsWith('sk-') : false
+          }
         })
       };
     }
@@ -48,7 +56,7 @@ exports.handler = async (event, context) => {
     let client;
     try {
       const { OpenAI } = await import('openai');
-      client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      client = new OpenAI({ apiKey: apiKey });
     } catch (importError) {
       console.error('Failed to import OpenAI in missions:', importError);
       return {
