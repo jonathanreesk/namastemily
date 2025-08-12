@@ -563,9 +563,10 @@ header {
 }
 
 #sendBtn {
-  min-width: 60px;
-  font-size: var(--text-xl);
+  min-width: 80px;
+  font-size: var(--text-base);
   font-weight: 700;
+  padding: var(--space-4) var(--space-6);
 }
 
 /* Badges */
