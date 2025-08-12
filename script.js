@@ -119,14 +119,20 @@ function render() {
       div.innerHTML = `
         <div class="msg-header">
           <strong>Asha Aunty:</strong>
-          <button class="listen-btn" data-original-text="${m.content.replace(/'/g, "\\'").replace(/"/g, '\\"')}" 
-                  onclick="speak('${m.content.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
+          <button class="listen-btn" data-original-text="${m.content.replace(/'/g, "\\'").replace(/"/g, '\\"')}"
                   ontouchstart="" style="cursor: pointer;">
             <span>🔊</span>
           </button>
         </div>
         <div class="msg-content">${m.content}</div>
       `;
+      
+      // Add click handler after creating the element
+      const listenBtn = div.querySelector('.listen-btn');
+      listenBtn.onclick = (e) => {
+        e.stopPropagation();
+        handleAudioClick(listenBtn, m.content);
+      };
     } else {
       div.innerHTML = `<strong>You:</strong> ${m.content}`;
     }
@@ -140,13 +146,10 @@ function speak(text) {
   speakWithAzure(text);
 }
 
-async function speakWithAzure(text) {
+async function speakWithAzure(text, button = null) {
   try {
     console.log('AZURE HINDI ONLY - Attempting TTS for:', text.substring(0, 50) + '...');
     toast("🔊 Loading Azure Hindi audio...");
-    
-    // Stop any currently playing audio
-    stopCurrentAudio();
     
     const resp = await fetch(`/api/speech`, {
       method: "POST",
@@ -160,6 +163,11 @@ async function speakWithAzure(text) {
       const errorText = await resp.text();
       console.error('AZURE FAILED:', errorText);
       toast("❌ Azure Hindi voice not available - check credentials");
+      if (button) {
+        button.innerHTML = '<span>🔊</span>';
+        button.onclick = () => handleAudioClick(button, text);
+        currentPlayingButton = null;
+      }
       return; // NO FALLBACK - just stop here
     }
     
@@ -169,12 +177,22 @@ async function speakWithAzure(text) {
     if (blob.size === 0) {
       console.error('AZURE returned empty audio');
       toast("❌ Azure returned empty audio");
+      if (button) {
+        button.innerHTML = '<span>🔊</span>';
+        button.onclick = () => handleAudioClick(button, text);
+        currentPlayingButton = null;
+      }
       return; // NO FALLBACK
     }
     
     if (!blob.type.includes('audio')) {
       console.error('AZURE returned non-audio:', blob.type);
       toast("❌ Azure returned invalid audio format");
+      if (button) {
+        button.innerHTML = '<span>🔊</span>';
+        button.onclick = () => handleAudioClick(button, text);
+        currentPlayingButton = null;
+      }
       return; // NO FALLBACK
     }
     
@@ -191,33 +209,25 @@ async function speakWithAzure(text) {
     
     audio.onplay = () => {
       toast("🔊 Azure Hindi voice playing!");
-      document.querySelectorAll('.listen-btn').forEach(btn => {
-        btn.innerHTML = '<span>⏹️</span>';
-        btn.onclick = () => stopAudio();
-      });
     };
     
     audio.onended = () => {
       URL.revokeObjectURL(url);
       currentAudio = null;
-      document.querySelectorAll('.listen-btn').forEach(btn => {
-        const originalText = btn.getAttribute('data-original-text');
-        if (originalText) {
-          btn.innerHTML = '<span>🔊</span>';
-          btn.onclick = () => speak(originalText);
-        }
-      });
+      if (button) {
+        button.innerHTML = '<span>🔊</span>';
+        button.onclick = () => handleAudioClick(button, text);
+      }
+      currentPlayingButton = null;
     };
     
     audio.onerror = () => {
       currentAudio = null;
-      document.querySelectorAll('.listen-btn').forEach(btn => {
-        const originalText = btn.getAttribute('data-original-text');
-        if (originalText) {
-          btn.innerHTML = '<span>🔊</span>';
-          btn.onclick = () => speak(originalText);
-        }
-      });
+      if (button) {
+        button.innerHTML = '<span>🔊</span>';
+        button.onclick = () => handleAudioClick(button, text);
+      }
+      currentPlayingButton = null;
       console.error('AZURE AUDIO playback failed');
       toast("❌ Azure audio playback failed");
     };
@@ -232,11 +242,21 @@ async function speakWithAzure(text) {
       } else {
         toast("❌ Azure audio play failed: " + playError.name);
       }
+      if (button) {
+        button.innerHTML = '<span>🔊</span>';
+        button.onclick = () => handleAudioClick(button, text);
+        currentPlayingButton = null;
+      }
     }
     
   } catch (e) {
     console.error('AZURE SPEECH FAILED:', e.message);
     toast("❌ Azure Hindi voice failed: " + e.message);
+    if (button) {
+      button.innerHTML = '<span>🔊</span>';
+      button.onclick = () => handleAudioClick(button, text);
+      currentPlayingButton = null;
+    }
     // NO FALLBACK - Azure only!
   }
 }
@@ -314,22 +334,25 @@ let rec;
 let chunks = [];
 let recognizing = false;
 let currentAudio = null;
+let currentPlayingButton = null;
 
 function stopCurrentAudio() {
   if (currentAudio) {
-    if (currentAudio.pause) {
-      // For HTML5 Audio
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
-    }
-    
-    // Cancel browser speech synthesis
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
     currentAudio = null;
   }
+  
+  // Reset all listen buttons to play state
+  document.querySelectorAll('.listen-btn').forEach(btn => {
+    const originalText = btn.getAttribute('data-original-text');
+    if (originalText) {
+      btn.innerHTML = '<span>🔊</span>';
+      btn.onclick = () => speak(originalText);
+    }
+  });
+  
+  currentPlayingButton = null;
 }
 
 micBtn.addEventListener("click", async () => {
@@ -496,7 +519,7 @@ function renderPhrases() {
     b.setAttribute("ontouchstart", ""); // Enable :active on iOS
     b.addEventListener("click", () => {
       input.value = p.pronunciation || p.tr;
-      speak(p.hindiPhrase || p.hi); // Speak the Hindi phrase when clicked
+      speak(p.hindiPhrase || p.hi, null); // Speak the Hindi phrase when clicked
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
       toast("Phrase added! Try saying it out loud 🗣️");
