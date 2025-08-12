@@ -253,6 +253,13 @@ header {
   border-color: var(--primary-500);
 }
 
+.control-group .btn {
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-base);
+  min-height: 48px;
+}
+
 /* Phrases Bar */
 .phrases {
   display: flex;
