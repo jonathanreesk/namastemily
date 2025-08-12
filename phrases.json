@@ -1,182 +1,182 @@
 {
   "market": [
     {
-      "hi": "मुझे टमाटर और आलू चाहिए।",
-      "en": "I want tomatoes and potatoes.",
-      "tr": "Mujhe tamatar aur aalu chahiye."
-      "pronunciation": "Mujhe tamatar aur aalu chahiye",
-      "displayText": "Mujhe tamatar aur aalu chahiye"
-      "pronunciation": "Yeh kitne ka hai?",
-      "displayText": "Yeh kitne ka hai?"
-      "hi": "यह कितने का है?",
-      "en": "How much is this?",
-      "tr": "Yeh kitne ka hai?"
+      "englishIntro": "Let's learn how to say 'I want tomatoes and potatoes' in Hindi.",
+      "hindiPhrase": "मुझे टमाटर और आलू चाहिए।",
+      "englishMeaning": "This is how you politely ask for vegetables at the market.",
+      "pronunciation": "Mujhe tamatar aur aalu chahiye"
     },
     {
-      "pronunciation": "Thoda kam kar dijiye, kripya",
-      "displayText": "Thoda kam kar dijiye, kripya"
-      "en": "Please reduce the price a little.",
-      "tr": "Thoda kam kar dijiye, kripya."
+      "englishIntro": "Here's how to ask 'How much is this?' - super useful at any market!",
+      "hindiPhrase": "यह कितने का है?",
+      "englishMeaning": "Use this to ask the price of anything.",
+      "pronunciation": "Yeh kitne ka hai?"
     },
     {
-      "hi": "यह ताज़ा है?",
-      "pronunciation": "Yeh taaza hai?",
-      "displayText": "Yeh taaza hai?"
-      "tr": "Yeh taaza hai?"
+      "englishIntro": "Want to bargain politely? Try this phrase:",
+      "hindiPhrase": "थोड़ा कम कर दीजिए, कृपया।",
+      "englishMeaning": "This means 'Please reduce the price a little' - very polite!",
+      "pronunciation": "Thoda kam kar dijiye, kripya"
     },
     {
-      "hi": "एक किलो दे दीजिए।",
-      "en": "Please give me one kilo.",
-      "pronunciation": "Ek kilo de dijiye",
-      "displayText": "Ek kilo de dijiye"
+      "englishIntro": "To check if vegetables are fresh, ask:",
+      "hindiPhrase": "यह ताज़ा है?",
+      "englishMeaning": "This means 'Is this fresh?' - important for good vegetables!",
+      "pronunciation": "Yeh taaza hai?"
+    },
+    {
+      "englishIntro": "When you want exactly one kilo, say:",
+      "hindiPhrase": "एक किलो दे दीजिए।",
+      "englishMeaning": "This means 'Please give me one kilo' - very useful!",
+      "pronunciation": "Ek kilo de dijiye"
     }
   ],
   "taxi": [
-      "pronunciation": "Mujhe bazaar jana hai",
-      "displayText": "Mujhe bazaar jana hai"
-      "hi": "मुझे बाज़ार जाना है।",
-      "en": "I need to go to the market.",
-      "tr": "Mujhe bazaar jana hai."
+    {
+      "englishIntro": "First thing to tell a taxi driver - where you want to go:",
+      "hindiPhrase": "मुझे बाज़ार जाना है।",
+      "englishMeaning": "This means 'I need to go to the market.'",
+      "pronunciation": "Mujhe bazaar jana hai"
     },
     {
-      "pronunciation": "Kitna lagega?",
-      "displayText": "Kitna lagega?"
-      "en": "How much will it cost?",
-      "tr": "Kitna lagega?"
+      "englishIntro": "Always ask about the fare upfront:",
+      "hindiPhrase": "कितना लगेगा?",
+      "englishMeaning": "This means 'How much will it cost?' - very important!",
+      "pronunciation": "Kitna lagega?"
     },
     {
-      "hi": "ज़रा धीरे चलिएगा।",
-      "pronunciation": "Zara dheere chaliyega",
-      "displayText": "Zara dheere chaliyega"
-      "tr": "Zara dheere chaliyega."
+      "englishIntro": "If the driver is going too fast, politely say:",
+      "hindiPhrase": "ज़रा धीरे चलिएगा।",
+      "englishMeaning": "This means 'Please drive a little slowly' - for safety!",
+      "pronunciation": "Zara dheere chaliyega"
     },
     {
-      "hi": "मीटर से चलेंगे?",
-      "en": "Will you go by the meter?",
-      "pronunciation": "Meter se chalenge?",
-      "displayText": "Meter se chalenge?"
+      "englishIntro": "To ask if they'll use the meter:",
+      "hindiPhrase": "मीटर से चलेंगे?",
+      "englishMeaning": "This means 'Will you go by the meter?' - helps avoid overcharging.",
+      "pronunciation": "Meter se chalenge?"
     }
   ],
   "rickshaw": [
-      "pronunciation": "Station tak chalenge?",
-      "displayText": "Station tak chalenge?"
-      "hi": "स्टेशन तक चलेंगे?",
-      "en": "Will you go to the station?",
-      "tr": "Station tak chalenge?"
+    {
+      "englishIntro": "To ask a rickshaw driver if they'll take you somewhere:",
+      "hindiPhrase": "स्टेशन तक चलेंगे?",
+      "englishMeaning": "This means 'Will you go to the station?' - replace 'station' with your destination.",
+      "pronunciation": "Station tak chalenge?"
     },
     {
-      "pronunciation": "Pachaas rupaye theek hai?",
-      "displayText": "Pachaas rupaye theek hai?"
-      "en": "Is fifty rupees okay?",
-      "tr": "Pachaas rupaye theek hai?"
+      "englishIntro": "When negotiating price, try:",
+      "hindiPhrase": "पचास रुपए ठीक है?",
+      "englishMeaning": "This means 'Is fifty rupees okay?' - adjust the amount as needed.",
+      "pronunciation": "Pachaas rupaye theek hai?"
     },
     {
-      "hi": "थोड़ा कम कर दीजिए।",
-      "pronunciation": "Thoda kam kar dijiye",
-      "displayText": "Thoda kam kar dijiye"
-      "tr": "Thoda kam kar dijiye."
+      "englishIntro": "To ask for a small discount:",
+      "hindiPhrase": "थोड़ा कम कर दीजिए।",
+      "englishMeaning": "This means 'Please reduce a little' - polite bargaining.",
+      "pronunciation": "Thoda kam kar dijiye"
     },
     {
-      "hi": "कितनी देर लगेगी?",
-      "en": "How long will it take?",
-      "pronunciation": "Kitni der lagegi?",
-      "displayText": "Kitni der lagegi?"
+      "englishIntro": "To ask about travel time:",
+      "hindiPhrase": "कितनी देर लगेगी?",
+      "englishMeaning": "This means 'How long will it take?' - good for planning.",
+      "pronunciation": "Kitni der lagegi?"
     }
   ],
-      "pronunciation": "Namaste, main Emily hoon",
-      "displayText": "Namaste, main Emily hoon"
+  "neighbor": [
     {
-      "hi": "नमस्ते, मैं Emily हूँ।",
-      "en": "Hello, I'm Emily.",
-      "tr": "Namaste, main Emily hoon."
-    },
-      "pronunciation": "Yeh meri beti Sophia hai",
-      "displayText": "Yeh meri beti Sophia hai"
-      "hi": "यह मेरी बेटी Sophia है।",
-      "en": "This is my daughter, Sophia.",
-      "tr": "Yeh meri beti Sophia hai."
+      "englishIntro": "Start with a simple self-introduction:",
+      "hindiPhrase": "नमस्ते, मैं Emily हूँ।",
+      "englishMeaning": "This means 'Hello, I'm Emily' - perfect for meeting neighbors!",
+      "pronunciation": "Namaste, main Emily hoon"
     },
     {
-      "pronunciation": "Aapse milkar khushi hui",
-      "displayText": "Aapse milkar khushi hui"
-      "en": "Nice to meet you.",
-      "tr": "Aapse milkar khushi hui."
+      "englishIntro": "To introduce your daughter:",
+      "hindiPhrase": "यह मेरी बेटी Sophia है।",
+      "englishMeaning": "This means 'This is my daughter, Sophia.'",
+      "pronunciation": "Yeh meri beti Sophia hai"
     },
     {
-      "hi": "आप यहाँ कब से रहते हैं?",
-      "pronunciation": "Aap yahan kab se rehte hain?",
-      "displayText": "Aap yahan kab se rehte hain?"
-      "tr": "Aap yahan kab se rehte hain?"
+      "englishIntro": "A polite way to say you enjoyed meeting someone:",
+      "hindiPhrase": "आपसे मिलकर खुशी हुई।",
+      "englishMeaning": "This means 'Nice to meet you' - very polite and warm!",
+      "pronunciation": "Aapse milkar khushi hui"
     },
     {
-      "hi": "चाय पीने आइएगा।",
-      "en": "Please come for tea.",
-      "pronunciation": "Chai peene aaiyega",
-      "displayText": "Chai peene aaiyega"
+      "englishIntro": "To ask how long someone has lived somewhere:",
+      "hindiPhrase": "आप यहाँ कब से रहते हैं?",
+      "englishMeaning": "This means 'Since when have you been living here?' - good conversation starter.",
+      "pronunciation": "Aap yahan kab se rehte hain?"
+    },
+    {
+      "englishIntro": "A lovely way to invite someone for tea:",
+      "hindiPhrase": "चाय पीने आइएगा।",
+      "englishMeaning": "This means 'Please come for tea' - very Indian hospitality!",
+      "pronunciation": "Chai peene aaiyega"
     }
   ],
-      "pronunciation": "Hum Minneapolis, America se hain",
-      "displayText": "Hum Minneapolis, America se hain"
+  "introductions": [
     {
-      "hi": "हम Minneapolis, America से हैं।",
-      "en": "We're from Minneapolis, America.",
-      "tr": "Hum Minneapolis, America se hain."
-    },
-      "pronunciation": "Hum yahan chhe mahine rehte hain",
-      "displayText": "Hum yahan chhe mahine rehte hain"
-      "hi": "हम यहाँ छह महीने रहते हैं।",
-      "en": "We live here for six months.",
-      "tr": "Hum yahan chhe mahine rehte hain."
+      "englishIntro": "Tell people where you're from:",
+      "hindiPhrase": "हम Minneapolis, America से हैं।",
+      "englishMeaning": "This means 'We're from Minneapolis, America.'",
+      "pronunciation": "Hum Minneapolis, America se hain"
     },
     {
-      "pronunciation": "Kal milte hain?",
-      "displayText": "Kal milte hain?"
-      "en": "Shall we meet tomorrow?",
-      "tr": "Kal milte hain?"
+      "englishIntro": "Explain how long you're staying:",
+      "hindiPhrase": "हम यहाँ छह महीने रहते हैं।",
+      "englishMeaning": "This means 'We live here for six months.'",
+      "pronunciation": "Hum yahan chhe mahine rehte hain"
     },
     {
-      "hi": "यह मेरे पति Jonathan हैं।",
-      "pronunciation": "Yeh mere pati Jonathan hain",
-      "displayText": "Yeh mere pati Jonathan hain"
-      "tr": "Yeh mere pati Jonathan hain."
+      "englishIntro": "To suggest meeting again:",
+      "hindiPhrase": "कल मिलते हैं?",
+      "englishMeaning": "This means 'Shall we meet tomorrow?' - friendly and casual.",
+      "pronunciation": "Kal milte hain?"
     },
     {
-      "hi": "आपका नाम क्या है?",
-      "en": "What is your name?",
-      "pronunciation": "Aapka naam kya hai?",
-      "displayText": "Aapka naam kya hai?"
+      "englishIntro": "To introduce your husband:",
+      "hindiPhrase": "यह मेरे पति Jonathan हैं।",
+      "englishMeaning": "This means 'This is my husband, Jonathan.'",
+      "pronunciation": "Yeh mere pati Jonathan hain"
+    },
+    {
+      "englishIntro": "The classic question to ask someone's name:",
+      "hindiPhrase": "आपका नाम क्या है?",
+      "englishMeaning": "This means 'What is your name?' - essential for introductions!",
+      "pronunciation": "Aapka naam kya hai?"
     }
   ],
   "church": [
     {
-      "hi": "यीशु में शांति मिले।",
-      "en": "May you find peace in Jesus.",
-      "tr": "Yeshu mein shanti mile."
-      "pronunciation": "Yeshu mein shanti mile",
-      "displayText": "Yeshu mein shanti mile"
-      "pronunciation": "Aap kaisi hain, Aunty ji?",
-      "displayText": "Aap kaisi hain, Aunty ji?"
-      "hi": "आप कैसी हैं, आंटी जी?",
-      "en": "How are you, Aunty?",
-      "tr": "Aap kaisi hain, Aunty ji?"
+      "englishIntro": "A beautiful Christian greeting in Hindi:",
+      "hindiPhrase": "यीशु में शांति मिले।",
+      "englishMeaning": "This means 'May you find peace in Jesus' - very meaningful!",
+      "pronunciation": "Yeshu mein shanti mile"
     },
     {
-      "pronunciation": "Prarthana ke liye dhanyavaad",
-      "displayText": "Prarthana ke liye dhanyavaad"
-      "en": "Thank you for the prayer.",
-      "tr": "Prarthana ke liye dhanyavaad."
+      "englishIntro": "Respectful way to greet an elder at church:",
+      "hindiPhrase": "आप कैसी हैं, आंटी जी?",
+      "englishMeaning": "This means 'How are you, Aunty?' - shows proper respect.",
+      "pronunciation": "Aap kaisi hain, Aunty ji?"
     },
     {
-      "hi": "प्रभु आपको आशीष दे।",
-      "pronunciation": "Prabhu aapko aashish de",
-      "displayText": "Prabhu aapko aashish de"
-      "tr": "Prabhu aapko aashish de."
+      "englishIntro": "To thank someone for praying for you:",
+      "hindiPhrase": "प्रार्थना के लिए धन्यवाद।",
+      "englishMeaning": "This means 'Thank you for the prayer' - very heartfelt.",
+      "pronunciation": "Prarthana ke liye dhanyavaad"
     },
     {
-      "hi": "आज का संदेश बहुत अच्छा था।",
-      "en": "Today's message was very good.",
-      "pronunciation": "Aaj ka sandesh bahut accha tha",
-      "displayText": "Aaj ka sandesh bahut accha tha"
+      "englishIntro": "A blessing you can give to others:",
+      "hindiPhrase": "प्रभु आपको आशीष दे।",
+      "englishMeaning": "This means 'May the Lord bless you' - beautiful blessing!",
+      "pronunciation": "Prabhu aapko aashish de"
+    },
+    {
+      "englishIntro": "To compliment the sermon:",
+      "hindiPhrase": "आज का संदेश बहुत अच्छा था।",
+      "englishMeaning": "This means 'Today's message was very good' - shows you were listening!",
+      "pronunciation": "Aaj ka sandesh bahut accha tha"
     }
   ]
 }

@@ -142,6 +142,9 @@ function speak(text) {
 
 async function speakWithAzure(text) {
   try {
+    // Stop any currently playing audio first
+    stopCurrentAudio();
+    
     console.log('Attempting Azure TTS for:', text.substring(0, 50) + '...');
     console.log('Text contains Hindi:', /[\u0900-\u097F]/.test(text));
     toast("🔊 Playing audio...");
@@ -218,6 +221,9 @@ async function speakWithAzure(text) {
     // For mobile Safari, we need to handle audio playback differently
     const playAudio = async () => {
       try {
+        // Ensure no other audio is playing
+        stopCurrentAudio();
+        currentAudio = audio;
         await audio.play();
       } catch (playError) {
         console.warn('Direct audio play failed, trying user interaction approach:', playError);
@@ -254,6 +260,7 @@ async function speakWithAzure(text) {
     
     // Fallback to browser TTS if Azure TTS fails
     if ("speechSynthesis" in window) {
+      // Stop any current speech
       window.speechSynthesis.cancel();
       
       const u = new SpeechSynthesisUtterance(text);
@@ -332,34 +339,18 @@ async function speakWithAzure(text) {
 }
 
 function stopAudio() {
-  if (currentAudio) {
-    if (currentAudio.pause) {
-      // For HTML5 Audio
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
-    } else if (currentAudio.cancel) {
-      // For SpeechSynthesis
-      currentAudio.cancel();
+  stopCurrentAudio();
+  
+  // Reset all listen buttons back to play icon
+  document.querySelectorAll('.listen-btn').forEach(btn => {
+    const originalText = btn.getAttribute('data-original-text');
+    if (originalText) {
+      btn.innerHTML = '<span>🔊</span>';
+      btn.onclick = () => speak(originalText);
     }
-    
-    // Cancel browser speech synthesis
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    
-    currentAudio = null;
-    
-    // Reset all listen buttons back to play icon
-    document.querySelectorAll('.listen-btn').forEach(btn => {
-      const originalText = btn.getAttribute('data-original-text');
-      if (originalText) {
-        btn.innerHTML = '<span>🔊</span>';
-        btn.onclick = () => speak(originalText);
-      }
-    });
-    
-    toast("🔇 Audio stopped");
-  }
+  });
+  
+  toast("🔇 Audio stopped");
 }
 
 async function send() {
@@ -420,6 +411,23 @@ let rec;
 let chunks = [];
 let recognizing = false;
 let currentAudio = null;
+
+function stopCurrentAudio() {
+  if (currentAudio) {
+    if (currentAudio.pause) {
+      // For HTML5 Audio
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    }
+    
+    // Cancel browser speech synthesis
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    
+    currentAudio = null;
+  }
+}
 
 micBtn.addEventListener("click", async () => {
   webSpeechDictation();
