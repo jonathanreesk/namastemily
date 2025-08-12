@@ -142,102 +142,55 @@ function speak(text) {
 
 async function speakWithAzure(text) {
   try {
-    // Stop any currently playing audio first
+    console.log('AZURE HINDI ONLY - Attempting TTS for:', text.substring(0, 50) + '...');
+    toast("🔊 Loading Azure Hindi audio...");
+    
+    // Stop any currently playing audio
     stopCurrentAudio();
-    
-    // Check if we're on mobile and need user interaction
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const isMobileChrome = isMobile && /Chrome/i.test(navigator.userAgent);
-    
-    const hindiChars = text.match(/[\u0900-\u097F]/g);
-    const isHindiPhrase = !!hindiChars;
-    console.log('Attempting Azure TTS for:', text.substring(0, 50) + '...');
-    console.log('Text contains Hindi characters:', isHindiPhrase);
-    console.log('Hindi characters found:', hindiChars || 'none');
-    console.log('Hindi character count:', hindiChars ? hindiChars.length : 0);
-    console.log('Mobile Chrome detected:', isMobileChrome);
-    toast("🔊 Playing audio...");
     
     const resp = await fetch(`/api/speech`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, slow: true })
+      body: JSON.stringify({ text, slow: true, forceAzure: true })
     });
     
-    console.log('Azure API response status:', resp.status);
-    console.log('Azure API response headers:', Object.fromEntries(resp.headers.entries()));
+    console.log('AZURE API Response:', resp.status, resp.statusText);
     
     if (!resp.ok) {
-      let errorText;
-      try {
-        errorText = await resp.text();
-        console.error('Azure TTS error response:', errorText);
-        
-        // Try to parse as JSON for better error details
-        try {
-          const errorData = JSON.parse(errorText);
-          console.error('Parsed error data:', errorData);
-          errorText = errorData.error || errorData.details || errorText;
-        } catch (parseError) {
-          console.log('Error response is not JSON, using raw text');
-        }
-      } catch (e) {
-        errorText = `HTTP ${resp.status}`;
-      }
-      console.error('AZURE SPEECH API FAILED:', resp.status, errorText);
-      throw new Error(`Azure TTS failed: ${errorText}`);
+      const errorText = await resp.text();
+      console.error('AZURE FAILED:', errorText);
+      toast("❌ Azure Hindi voice not available - check credentials");
+      return; // NO FALLBACK - just stop here
     }
     
     const blob = await resp.blob();
-    console.log('Azure audio blob received, size:', blob.size, 'type:', blob.type);
+    console.log('AZURE AUDIO received:', blob.size, 'bytes, type:', blob.type);
     
     if (blob.size === 0) {
-      throw new Error("Empty audio response");
+      console.error('AZURE returned empty audio');
+      toast("❌ Azure returned empty audio");
+      return; // NO FALLBACK
     }
     
-    // Verify this is actually audio content
     if (!blob.type.includes('audio')) {
-      console.error('Response is not audio:', blob.type);
-      const text = await blob.text();
-      console.error('Non-audio response content:', text.substring(0, 200));
-      throw new Error(`Expected audio, got ${blob.type}`);
+      console.error('AZURE returned non-audio:', blob.type);
+      toast("❌ Azure returned invalid audio format");
+      return; // NO FALLBACK
     }
     
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     
-    console.log('Created audio element, attempting playback...');
-    
-    // Store reference to current audio for stopping
+    console.log('AZURE AUDIO: Playing Hindi voice...');
     currentAudio = audio;
     
-    // Enhanced mobile audio handling
-    if (isMobile) {
-      audio.preload = 'metadata'; // Use metadata instead of auto for mobile
-      audio.playsInline = true; // Prevent fullscreen on iOS
-      audio.muted = false;
-      audio.volume = 1.0;
-      
-      // For mobile Chrome, we need to handle autoplay restrictions
-      if (isMobileChrome) {
-        // Try to enable audio context on user interaction
-        try {
-          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-          if (audioContext.state === 'suspended') {
-            console.log('Audio context suspended, attempting to resume...');
-            await audioContext.resume();
-          }
-        } catch (contextError) {
-          console.warn('Audio context handling failed:', contextError);
-        }
-      }
-    } else {
-      audio.preload = 'auto';
-    }
+    // Mobile optimizations
+    audio.playsInline = true;
+    audio.preload = 'auto';
+    audio.volume = 1.0;
     
     audio.onplay = () => {
-      toast("🔊 Playing Hindi audio!");
-      // Update all listen buttons to show stop icon while playing
+      toast("🔊 Azure Hindi voice playing!");
       document.querySelectorAll('.listen-btn').forEach(btn => {
         btn.innerHTML = '<span>⏹️</span>';
         btn.onclick = () => stopAudio();
@@ -245,9 +198,8 @@ async function speakWithAzure(text) {
     };
     
     audio.onended = () => {
-      URL.revokeObjectURL(url); // Clean up memory
+      URL.revokeObjectURL(url);
       currentAudio = null;
-      // Reset all listen buttons back to play icon
       document.querySelectorAll('.listen-btn').forEach(btn => {
         const originalText = btn.getAttribute('data-original-text');
         if (originalText) {
@@ -259,7 +211,6 @@ async function speakWithAzure(text) {
     
     audio.onerror = () => {
       currentAudio = null;
-      // Reset buttons on error
       document.querySelectorAll('.listen-btn').forEach(btn => {
         const originalText = btn.getAttribute('data-original-text');
         if (originalText) {
@@ -267,183 +218,26 @@ async function speakWithAzure(text) {
           btn.onclick = () => speak(originalText);
         }
       });
-      throw new Error("Audio playback failed");
+      console.error('AZURE AUDIO playback failed');
+      toast("❌ Azure audio playback failed");
     };
     
-    // Enhanced mobile playback handling
-    const playAudio = async () => {
-      try {
-        // Ensure no other audio is playing
-        stopCurrentAudio();
-        currentAudio = audio;
-        
-        // Add a small delay for mobile processing
-        if (isMobile) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        
-        await audio.play();
-      } catch (playError) {
-        console.warn('Direct audio play failed:', playError.name, playError.message);
-        // On mobile, audio might need user interaction
-        if (playError.name === 'NotAllowedError' || playError.name === 'NotSupportedError') {
-          toast("🔊 Tap to play audio (mobile browser requirement)");
-          // Create a temporary button for user interaction
-          const playBtn = document.createElement('button');
-          playBtn.innerHTML = '🔊 Play Hindi Audio';
-          playBtn.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 9999;
-            padding: 20px 30px;
-            font-size: 18px;
-            font-weight: bold;
-            background: #14b8a6;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            cursor: pointer;
-            min-width: 200px;
-            text-align: center;
-          `;
-          document.body.appendChild(playBtn);
-          
-          // Add touch feedback
-          playBtn.addEventListener('touchstart', () => {
-            playBtn.style.transform = 'translate(-50%, -50%) scale(0.95)';
-          });
-          
-          playBtn.addEventListener('touchend', () => {
-            playBtn.style.transform = 'translate(-50%, -50%) scale(1)';
-          });
-          
-          playBtn.onclick = async () => {
-            try {
-              // Enable audio context first
-              try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioContext.state === 'suspended') {
-                  await audioContext.resume();
-                }
-              } catch (contextError) {
-                console.warn('Audio context resume failed:', contextError);
-              }
-              
-              await audio.play();
-              document.body.removeChild(playBtn);
-              toast("🔊 Playing Hindi audio!");
-            } catch (e) {
-              console.error('Manual play also failed:', e);
-              document.body.removeChild(playBtn);
-              toast("❌ Audio playback not supported on this device");
-            }
-          };
-          
-          // Auto-remove button after 10 seconds
-          setTimeout(() => {
-            if (document.body.contains(playBtn)) {
-              document.body.removeChild(playBtn);
-              toast("Audio play timeout - try again");
-            }
-          }, 10000);
-          
-        } else {
-          throw playError;
-        }
+    // Try to play immediately
+    try {
+      await audio.play();
+    } catch (playError) {
+      console.error('AZURE AUDIO play failed:', playError.name);
+      if (playError.name === 'NotAllowedError') {
+        toast("🔊 Tap screen first to enable Azure Hindi audio");
+      } else {
+        toast("❌ Azure audio play failed: " + playError.name);
       }
-    };
-    
-    await playAudio();
+    }
     
   } catch (e) {
-    console.error('Speech API failed, falling back to browser TTS:', e);
-    toast(`Azure TTS failed (${e.message}), using browser voice...`);
-    
-    // Fallback to browser TTS if Azure TTS fails
-    if ("speechSynthesis" in window) {
-      // Stop any current speech
-      window.speechSynthesis.cancel();
-      
-      const u = new SpeechSynthesisUtterance(text);
-      // Use appropriate language based on content
-      const isHindiPhrase = /[\u0900-\u097F]/.test(text);
-      u.lang = isHindiPhrase ? "hi-IN" : "en-US";
-      u.rate = 0.6;
-      u.pitch = 1.0;
-      u.volume = 0.9;
-      
-      // Store reference for browser TTS
-      currentAudio = { 
-        pause: () => window.speechSynthesis.cancel(),
-        currentTime: 0,
-        paused: false
-      };
-      
-      const voices = window.speechSynthesis.getVoices();
-      let selectedVoice;
-      
-      if (isHindiPhrase) {
-        console.log('Looking for Hindi voice for text:', text.match(/[\u0900-\u097F]/g));
-        selectedVoice = voices.find(voice => 
-          voice.lang.includes('hi') || 
-          voice.name.toLowerCase().includes('hindi') ||
-          voice.name.toLowerCase().includes('india')
-        );
-      } else {
-        console.log('Looking for English voice for text:', text.substring(0, 30));
-        selectedVoice = voices.find(voice => 
-          voice.lang.includes('en-US') || 
-          voice.name.toLowerCase().includes('english')
-        );
-      }
-      
-      if (selectedVoice) {
-        u.voice = selectedVoice;
-        console.log('Selected voice:', selectedVoice.name, selectedVoice.lang);
-      } else {
-        console.log('No suitable voice found, using default');
-      }
-      
-      u.onstart = () => {
-        // Update all listen buttons to show stop icon while playing
-        document.querySelectorAll('.listen-btn').forEach(btn => {
-          btn.innerHTML = '<span>⏹️</span>';
-          btn.onclick = () => stopAudio();
-        });
-      };
-      
-      u.onend = () => {
-        currentAudio = null;
-        // Reset all listen buttons back to play icon
-        document.querySelectorAll('.listen-btn').forEach(btn => {
-          const originalText = btn.getAttribute('data-original-text');
-          if (originalText) {
-            btn.innerHTML = '<span>🔊</span>';
-            btn.onclick = () => speak(originalText);
-          }
-        });
-      };
-      
-      u.onerror = () => {
-        currentAudio = null;
-        // Reset buttons on error
-        document.querySelectorAll('.listen-btn').forEach(btn => {
-          const originalText = btn.getAttribute('data-original-text');
-          if (originalText) {
-            btn.innerHTML = '<span>🔊</span>';
-            btn.onclick = () => speak(originalText);
-          }
-        });
-        toast("Audio not available on this device 📱");
-      };
-      
-      window.speechSynthesis.speak(u);
-    } else {
-      toast("Audio not available on this device 📱");
-    }
+    console.error('AZURE SPEECH FAILED:', e.message);
+    toast("❌ Azure Hindi voice failed: " + e.message);
+    // NO FALLBACK - Azure only!
   }
 }
 

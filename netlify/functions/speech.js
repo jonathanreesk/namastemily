@@ -32,7 +32,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { text, slow = true } = JSON.parse(event.body || "{}");
+    const { text, slow = true, forceAzure = false } = JSON.parse(event.body || "{}");
     if (!text) {
       return {
         statusCode: 400,
@@ -50,6 +50,19 @@ exports.handler = async (event, context) => {
       keyLength: key ? key.length : 0,
       region: region
     });
+
+    // If forceAzure is true, fail immediately if no Azure credentials
+    if (forceAzure && (!key || !region)) {
+      console.error('FORCE AZURE: Missing credentials');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: "AZURE_SPEECH_KEY or AZURE_SPEECH_REGION not configured in Netlify environment variables. Azure Hindi voice requires these credentials.",
+          debug: { hasKey: !!key, hasRegion: !!region, forceAzure: true }
+        })
+      };
+    }
 
     if (!key || !region) {
       console.error('Missing Azure credentials:', { 
@@ -72,7 +85,7 @@ exports.handler = async (event, context) => {
     // Import fetch for Node.js environment
     const fetch = require('node-fetch');
 
-    // Apply Hindi phoneme corrections for proper pronunciation
+    // FORCE HINDI: Apply phoneme corrections for proper pronunciation
     function applyHindiPhonemes(s) {
       return s
         .replace(/मैं/g, '<phoneme alphabet="ipa" ph="mɛ̃">मैं</phoneme>')
@@ -84,31 +97,16 @@ exports.handler = async (event, context) => {
         .replace(/चाहिए/g, '<phoneme alphabet="ipa" ph="t͡ʃaːɦije">चाहिए</phoneme>');
     }
 
-    // Check if text contains Hindi characters
-    const hindiChars = text.match(/[\u0900-\u097F]/g);
-    const isHindiPhrase = !!hindiChars;
+    // FORCE HINDI: Always treat as Hindi and apply phoneme corrections
+    console.log('FORCE HINDI MODE: Processing text as Hindi');
+    const processedText = applyHindiPhonemes(text);
     
-    console.log('Text analysis:', {
-      originalText: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
-      isHindiPhrase,
-      hindiCharsFound: hindiChars || 'none',
-      hindiCharCount: hindiChars ? hindiChars.length : 0
-    });
+    // FORCE HINDI: Always use Hindi voice and language
+    const voice = "hi-IN-SwaraNeural";
+    const lang = "hi-IN";
+    const rate = slow ? "-20%" : "-10%"; // Slower for Hindi learning
     
-    const processedText = isHindiPhrase ? applyHindiPhonemes(text) : text;
-    
-    // Use appropriate voice and language based on content
-    const rate = slow ? "-10%" : "0%";
-    const voice = isHindiPhrase ? "hi-IN-SwaraNeural" : "en-US-AriaNeural";
-    const lang = isHindiPhrase ? "hi-IN" : "en-US";
-    
-    console.log('Voice selection:', { 
-      voice, 
-      lang, 
-      rate, 
-      isHindiPhrase,
-      textLength: text.length
-    });
+    console.log('FORCE HINDI: Using voice:', voice, 'language:', lang, 'rate:', rate);
     
     const ssml = `
 <speak version="1.0" xml:lang="${lang}" xmlns:mstts="https://www.w3.org/2001/mstts">
@@ -119,11 +117,11 @@ exports.handler = async (event, context) => {
   </voice>
 </speak>`.trim();
 
-    console.log('Generated SSML preview:', ssml.substring(0, 200) + '...');
+    console.log('HINDI SSML generated:', ssml);
 
     const url = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
     
-    console.log('Making Azure API request to:', url);
+    console.log('AZURE HINDI API request to:', url);
     
     const resp = await fetch(url, {
       method: "POST",
@@ -135,7 +133,7 @@ exports.handler = async (event, context) => {
       body: ssml
     });
 
-    console.log('Azure API response:', {
+    console.log('AZURE HINDI API response:', {
       status: resp.status,
       statusText: resp.statusText,
       headers: Object.fromEntries(resp.headers.entries())
@@ -143,7 +141,7 @@ exports.handler = async (event, context) => {
 
     if (!resp.ok) {
       const errText = await resp.text();
-      console.error('Azure API error:', resp.status, errText);
+      console.error('AZURE HINDI API ERROR:', resp.status, errText);
       return {
         statusCode: 500,
         headers,
@@ -157,7 +155,7 @@ exports.handler = async (event, context) => {
     }
 
     const buf = Buffer.from(await resp.arrayBuffer());
-    console.log('Audio buffer size:', buf.length);
+    console.log('AZURE HINDI audio buffer size:', buf.length, 'bytes');
     
     return {
       statusCode: 200,
