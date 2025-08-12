@@ -1,5 +1,3 @@
-exports.handler = async (event, context) => {
-}
 const { OpenAI } = require('openai');
 
 exports.handler = async (event, context) => {
@@ -56,7 +54,6 @@ exports.handler = async (event, context) => {
       };
     }
     
-    // Use dynamic import for OpenAI
     const client = new OpenAI({ apiKey: apiKey });
     
     let prompt = '';
@@ -108,7 +105,6 @@ Format as JSON array:
     "displayText": "Yeh taaza hai?",
     "culturalNote": "Vendors appreciate when you check freshness - shows you know quality",
     "frequency": "very_high"
-    "culturalNote": "Vendors appreciate when you check freshness - shows you know quality"
   }
 ]`;
     }
@@ -148,7 +144,24 @@ Format as JSON array:
     try {
       result = JSON.parse(content);
     } catch (e) {
-      throw new Error('Invalid JSON response from AI');
+      console.error('Failed to parse AI response:', content);
+      // Return fallback suggestions
+      result = [
+        {
+          "englishIntro": "Essential greeting everyone should know",
+          "hindiPhrase": "नमस्ते",
+          "englishMeaning": "Hello/Goodbye",
+          "pronunciation": "Namaste",
+          "displayText": "Namaste"
+        },
+        {
+          "englishIntro": "Polite way to say thank you",
+          "hindiPhrase": "धन्यवाद",
+          "englishMeaning": "Thank you",
+          "pronunciation": "Dhanyavaad",
+          "displayText": "Dhanyavaad"
+        }
+      ];
     }
 
     return {
