@@ -231,7 +231,9 @@ async function speakWithAzure(text) {
         paused: false
       };
       
-      // Try to find the best Hindi voice available
+      const resp = await fetch(`/.netlify/functions/missions`, {
+      }
+      )
       const voices = window.speechSynthesis.getVoices();
       const hindiVoice = voices.find(voice => 
         voice.lang.includes('hi') || 
