@@ -326,7 +326,7 @@ async function send() {
   input.value = "";
 
   try {
-    const resp = await fetch(`${API}/api/roleplay`, {
+    const resp = await fetch(`/.netlify/functions/roleplay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -352,7 +352,7 @@ async function send() {
     
   } catch (e) {
     console.error('Send error:', e);
-    addMsg("assistant", "Sorry, I'm having trouble connecting to the AI service right now. The speech features should still work with your browser's built-in voice. 🔧");
+    addMsg("assistant", "Sorry, I'm having trouble connecting to the AI service right now. Please make sure your OpenAI API key is configured in Netlify environment variables. The speech features should still work with your browser's built-in voice. 🔧");
   } finally {
     sendBtn.classList.remove('loading');
     sendBtn.disabled = false;
