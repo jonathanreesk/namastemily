@@ -135,7 +135,7 @@ function addMsg(role, content) {
 function handlePlayClick(playBtn, stopBtn, text) {
   console.log('Play button clicked for:', text.substring(0, 30) + '...');
   
-  // ALWAYS stop any current audio first
+  // CRITICAL: Stop ALL audio before starting new one
   stopAllAudio();
   
   // Show stop button, hide play button
@@ -157,14 +157,16 @@ function handleStopClick(playBtn, stopBtn) {
 function stopAllAudio() {
   console.log('Stopping all audio...');
   
-  // Stop current audio if playing
+  // FORCE stop current audio
   if (currentAudio) {
+    console.log('Forcefully stopping current audio');
     currentAudio.pause();
     currentAudio.currentTime = 0;
+    currentAudio.src = ''; // Clear source to fully stop
     currentAudio = null;
   }
   
-  // Reset all buttons to play state
+  // Reset ALL buttons to play state (not just current)
   document.querySelectorAll('.play-btn').forEach(btn => {
     btn.style.display = 'inline-flex';
   });
@@ -229,6 +231,13 @@ function speak(text) {
 async function speakWithAzure(text) {
   try {
     console.log('Starting Azure TTS for:', text.substring(0, 50) + '...');
+    
+    // DOUBLE CHECK: Make sure no audio is playing
+    if (currentAudio) {
+      console.log('WARNING: Found existing audio, stopping it first');
+      stopAllAudio();
+    }
+    
     toast("🔊 Loading audio...");
     
     const resp = await fetch(`/api/speech`, {
@@ -249,8 +258,9 @@ async function speakWithAzure(text) {
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     
-    // Set as current audio
+    // CRITICAL: Set as current audio BEFORE playing
     currentAudio = audio;
+    console.log('Set new audio as current, about to play');
     
     audio.onplay = () => {
       toast("🔊 Playing audio!");
@@ -283,7 +293,9 @@ async function speakWithAzure(text) {
       toast("Audio playback failed");
     };
     
+    console.log('About to play new audio...');
     await audio.play();
+    console.log('New audio started playing');
     
   } catch (e) {
     console.error('Speech failed:', e);
