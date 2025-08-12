@@ -575,10 +575,13 @@ function renderPhrases() {
     b.title = tooltip;
     
     b.addEventListener("click", () => {
-      // Add the phrase to chat and send it
+      // Add the phrase directly to chat and send it
       const phraseText = `I want to practice: "${p.en || p.tr}" (${p.hi})`;
-      input.value = phraseText;
-      send(); // Actually send it to the chat
+      addMsg("user", phraseText);
+      input.value = "";
+      
+      // Send to AI for response
+      sendPhraseToAI(phraseText);
       
       // Speak the Hindi phrase
       if (p.hi) {
@@ -587,7 +590,7 @@ function renderPhrases() {
       
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
-      toast("Phrase sent to Asha Aunty! 🗣️");
+      toast("Phrase added to chat! 🗣️");
     });
     
     phrasesBar.appendChild(b);
