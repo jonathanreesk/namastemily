@@ -357,6 +357,23 @@ header {
   background: var(--gray-400);
 }
 
+/* Chat Actions */
+.chat-actions {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-top: 1px solid var(--gray-200);
+  background: var(--gray-50);
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  margin: var(--space-4) calc(-1 * var(--space-6)) calc(-1 * var(--space-6));
+  justify-content: center;
+}
+
+.chat-actions .btn {
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-base);
+}
+
 .msg {
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-lg);
@@ -844,9 +861,11 @@ footer {
     gap: var(--space-2);
   }
   
-  .lesson-actions {
-    flex-direction: column;
+  .chat-actions {
+    flex-direction: row;
     gap: var(--space-2);
+    padding: var(--space-3);
+    padding: var(--space-2);
   }
   
   .btn {
