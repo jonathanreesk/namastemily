@@ -268,6 +268,7 @@ async function send() {
   
   addMsg("user", text);
   input.value = "";
+}
 
 // Mic handling
 let rec;
