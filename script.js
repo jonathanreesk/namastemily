@@ -441,9 +441,9 @@ function renderPhrases() {
   pack.forEach(p => {
     const b = document.createElement("button");
     // Use transliteration for display
-    const displayText = p.displayText || p.pronunciation || p.tr || p.hi;
-    b.textContent = displayText;
-    b.title = `${p.englishMeaning || p.en} (${p.pronunciation || p.tr})`;
+    // Prioritize transliteration display for readability
+    const displayText = p.displayText || p.pronunciation || p.tr || p.englishMeaning || p.en;
+    const tooltip = `${p.englishMeaning || p.en} ${p.culturalNote ? '• ' + p.culturalNote : ''}`;
     b.style.cursor = "pointer";
     b.setAttribute("ontouchstart", ""); // Enable :active on iOS
     b.addEventListener("click", () => {
