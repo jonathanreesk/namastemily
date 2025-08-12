@@ -585,84 +585,49 @@ async function loadPhrases() {
 
 function renderPhrases() {
   const scene = sceneSel.value;
-  const staticPack = phrasePacks[scene] || [];
-  const aiPack = aiPhrasesLoaded[scene] || [];
+  const pack = phrasePacks[scene] || [];
   
-  console.log(`Rendering phrases for ${scene}:`, {
-    staticCount: staticPack.length,
-    aiCount: aiPack.length
-  });
-  
-  // Use AI phrases if available, otherwise static
-  const pack = aiPack.length > 0 ? aiPack : staticPack;
+  console.log(`Rendering ${pack.length} phrases for scene: ${scene}`);
   
   phrasesBar.innerHTML = "";
   
   if (pack.length === 0) {
-    phrasesBar.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 20px;">Loading phrases... 📝</p>';
+    phrasesBar.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 20px;">No phrases available for this scene</p>';
     return;
   }
   
-  console.log('Rendering', pack.length, 'phrases for', scene);
-  
   pack.forEach(p => {
     const b = document.createElement("button");
-    b.className = "phrase-btn";
     
-    // Display transliteration for readability
-    const displayText = p.tr || p.en || 'Unknown phrase';
+    // Display clean English meaning
+    let displayText = p.en || p.tr || 'Unknown phrase';
+    // Remove "This means" prefix if it exists
+    displayText = displayText.replace(/^This means\s*/i, '');
+    
     const tooltip = p.intro || p.en || 'Hindi phrase';
     
     b.textContent = displayText;
     b.title = tooltip;
     
     b.addEventListener("click", () => {
-      // Add the phrase directly to chat and send it
-      const phraseText = `I want to practice: "${p.en || p.tr}" (${p.hi})`;
-      addMsg("user", phraseText);
-      input.value = "";
-      addMsg("user", phraseText);
-      // Put the English phrase directly in input and send it
+      // Put English phrase in input for practice
       input.value = p.en || p.tr || displayText;
       send();
       
-      // Also speak the Hindi phrase for pronunciation
+      // Speak the Hindi phrase
       setTimeout(() => {
         if (p.hi) {
           speak(p.hi);
         }
-      }, 1000);
+      }, 500);
       
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
-      toast(`Sent: "${p.en}" - Listen for Hindi pronunciation! 🗣️`);
+      toast(`Added: "${displayText}" - Listen to Hindi pronunciation! 🗣️`);
     });
     
     phrasesBar.appendChild(b);
   });
-  
-  // Add "More Phrases" button if AI phrases aren't loaded yet
-  if (aiPack.length === 0 && staticPack.length > 0) {
-    const moreBtn = document.createElement("button");
-    moreBtn.className = "more-phrases-btn";
-    moreBtn.innerHTML = '<span>🤖</span><span>More Phrases</span>';
-    moreBtn.onclick = () => {
-      moreBtn.innerHTML = '<span>⏳</span><span>Loading AI...</span>';
-      moreBtn.disabled = true;
-      loadMorePhrases(scene).finally(() => {
-        moreBtn.disabled = false;
-      });
-    };
-    phrasesBar.appendChild(moreBtn);
-  }
-  
-  // Show AI indicator if AI phrases are loaded
-  if (aiPack.length > 0) {
-    const indicator = document.createElement("div");
-    indicator.className = "ai-indicator";
-    indicator.innerHTML = '<span>🤖</span><span>AI Personalized</span>';
-    phrasesBar.appendChild(indicator);
-  }
 }
 
 sceneSel.addEventListener("change", () => {
