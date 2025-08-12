@@ -367,11 +367,16 @@ header {
   border-radius: 0 0 var(--radius-xl) var(--radius-xl);
   margin: var(--space-4) calc(-1 * var(--space-6)) calc(-1 * var(--space-6));
   justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .chat-actions .btn {
-  padding: var(--space-3) var(--space-5);
+  padding: var(--space-3) var(--space-6);
   font-size: var(--text-base);
+  min-height: 48px;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .msg {
