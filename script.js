@@ -621,6 +621,11 @@ function renderPhrases() {
       const phraseText = `I want to practice: "${p.en || p.tr}" (${p.hi})`;
       addMsg("user", phraseText);
       input.value = "";
+      addMsg("user", phraseText);
+      input.value = "";
+      
+      // Send to AI for response
+      sendPhraseToAI(phraseText);
       
       // Send to AI for response
       sendPhraseToAI(phraseText);
