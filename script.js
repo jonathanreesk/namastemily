@@ -303,47 +303,6 @@ async function send() {
   }
 }
 
-async function sendPhraseToAI(phraseText) {
-  try {
-    // Add loading state
-    sendBtn.classList.add('loading');
-    sendBtn.disabled = true;
-    
-    // Add phrase to history for AI context
-    history.push({ role: "user", content: phraseText });
-    
-    const resp = await fetch(`/.netlify/functions/roleplay`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        history,
-        scene: sceneSel.value,
-        level: levelSel.value
-      })
-    });
-    
-    if (!resp.ok) {
-      throw new Error(`HTTP ${resp.status}`);
-    }
-    
-    const data = await resp.json();
-    addMsg("assistant", data.reply);
-    
-    // Auto-speak the response
-    setTimeout(() => speak(data.reply), 500);
-    
-    // Award XP and update gamification
-    GAMIFY.awardXP(5);
-    GAMIFY.touchScene(sceneSel.value);
-    
-  } catch (e) {
-    console.error('Send phrase error:', e);
-    addMsg("assistant", "I need an OpenAI API key to chat with you! 🔧\n\nTo fix this:\n1. Go to your Netlify site dashboard\n2. Click 'Site settings' → 'Environment variables'\n3. Add OPENAI_API_KEY with your OpenAI API key\n4. Redeploy the site\n\nThe speech features still work with your browser's voice! Try clicking the 🔊 buttons.");
-  } finally {
-    sendBtn.classList.remove('loading');
-    sendBtn.disabled = false;
-  }
-}
 
 sendBtn.addEventListener("click", send);
 input.addEventListener("keydown", (e) => {
@@ -617,18 +576,12 @@ function renderPhrases() {
     b.title = tooltip;
     
     b.addEventListener("click", () => {
-      // Add the phrase directly to chat and send it
+      // Create the practice message
       const phraseText = `I want to practice: "${p.en || p.tr}" (${p.hi})`;
-      addMsg("user", phraseText);
-      input.value = "";
-      addMsg("user", phraseText);
-      input.value = "";
       
-      // Send to AI for response
-      sendPhraseToAI(phraseText);
-      
-      // Send to AI for response
-      sendPhraseToAI(phraseText);
+      // Add to input and send normally
+      input.value = phraseText;
+      send();
       
       // Speak the Hindi phrase
       if (p.hi) {
@@ -849,7 +802,7 @@ const MISSIONS = {
 missionDoneBtn?.addEventListener("click", () => MISSIONS.complete());
 
 // Review Lesson Button
-reviewBtn.addEventListener("click", async () => {
+document.getElementById("reviewBtn").addEventListener("click", async () => {
   const scene = sceneSel.value;
   const level = levelSel.value;
   const xp = GAMIFY.state?.xp || 0;
@@ -866,11 +819,12 @@ reviewBtn.addEventListener("click", async () => {
 Make it encouraging and specific to my progress in the ${scene} scenario.`;
 
   input.value = reviewPrompt;
-  send();
+  await send();
+  GAMIFY.awardXP(10);
 });
 
 // Test Me Button  
-testBtn.addEventListener("click", async () => {
+document.getElementById("testBtn").addEventListener("click", async () => {
   const scene = sceneSel.value;
   const level = levelSel.value;
   const conversationCount = history.length;
@@ -886,7 +840,8 @@ Please give me:
 Make it challenging but encouraging. We've had ${conversationCount} messages in our conversation, so base the test on what we've actually covered. Give me one question at a time and wait for my answer before the next one!`;
 
   input.value = testPrompt;
-  send();
+  await send();
+  GAMIFY.awardXP(10);
 });
 
 // Toast notifications
