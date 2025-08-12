@@ -4,124 +4,147 @@
       "hi": "मुझे टमाटर और आलू चाहिए।",
       "en": "I want tomatoes and potatoes.",
       "tr": "Mujhe tamatar aur aalu chahiye."
-    },
-    {
+      "pronunciation": "Mujhe tamatar aur aalu chahiye",
+      "displayText": "Mujhe tamatar aur aalu chahiye"
+      "pronunciation": "Yeh kitne ka hai?",
+      "displayText": "Yeh kitne ka hai?"
       "hi": "यह कितने का है?",
       "en": "How much is this?",
       "tr": "Yeh kitne ka hai?"
     },
     {
-      "hi": "थोड़ा कम कर दीजिए, कृपया।",
+      "pronunciation": "Thoda kam kar dijiye, kripya",
+      "displayText": "Thoda kam kar dijiye, kripya"
       "en": "Please reduce the price a little.",
       "tr": "Thoda kam kar dijiye, kripya."
     },
     {
       "hi": "यह ताज़ा है?",
-      "en": "Is this fresh?",
+      "pronunciation": "Yeh taaza hai?",
+      "displayText": "Yeh taaza hai?"
       "tr": "Yeh taaza hai?"
     },
     {
       "hi": "एक किलो दे दीजिए।",
       "en": "Please give me one kilo.",
-      "tr": "Ek kilo de dijiye."
+      "pronunciation": "Ek kilo de dijiye",
+      "displayText": "Ek kilo de dijiye"
     }
   ],
   "taxi": [
-    {
+      "pronunciation": "Mujhe bazaar jana hai",
+      "displayText": "Mujhe bazaar jana hai"
       "hi": "मुझे बाज़ार जाना है।",
       "en": "I need to go to the market.",
       "tr": "Mujhe bazaar jana hai."
     },
     {
-      "hi": "कितना लगेगा?",
+      "pronunciation": "Kitna lagega?",
+      "displayText": "Kitna lagega?"
       "en": "How much will it cost?",
       "tr": "Kitna lagega?"
     },
     {
       "hi": "ज़रा धीरे चलिएगा।",
-      "en": "Please drive a little slowly.",
+      "pronunciation": "Zara dheere chaliyega",
+      "displayText": "Zara dheere chaliyega"
       "tr": "Zara dheere chaliyega."
     },
     {
       "hi": "मीटर से चलेंगे?",
       "en": "Will you go by the meter?",
-      "tr": "Meter se chalenge?"
+      "pronunciation": "Meter se chalenge?",
+      "displayText": "Meter se chalenge?"
     }
   ],
   "rickshaw": [
-    {
+      "pronunciation": "Station tak chalenge?",
+      "displayText": "Station tak chalenge?"
       "hi": "स्टेशन तक चलेंगे?",
       "en": "Will you go to the station?",
       "tr": "Station tak chalenge?"
     },
     {
-      "hi": "पचास रुपए ठीक है?",
+      "pronunciation": "Pachaas rupaye theek hai?",
+      "displayText": "Pachaas rupaye theek hai?"
       "en": "Is fifty rupees okay?",
       "tr": "Pachaas rupaye theek hai?"
     },
     {
       "hi": "थोड़ा कम कर दीजिए।",
-      "en": "Please reduce a little.",
+      "pronunciation": "Thoda kam kar dijiye",
+      "displayText": "Thoda kam kar dijiye"
       "tr": "Thoda kam kar dijiye."
     },
     {
       "hi": "कितनी देर लगेगी?",
       "en": "How long will it take?",
-      "tr": "Kitni der lagegi?"
+      "pronunciation": "Kitni der lagegi?",
+      "displayText": "Kitni der lagegi?"
     }
   ],
-  "neighbor": [
+      "pronunciation": "Namaste, main Emily hoon",
+      "displayText": "Namaste, main Emily hoon"
     {
       "hi": "नमस्ते, मैं Emily हूँ।",
       "en": "Hello, I'm Emily.",
       "tr": "Namaste, main Emily hoon."
     },
-    {
+      "pronunciation": "Yeh meri beti Sophia hai",
+      "displayText": "Yeh meri beti Sophia hai"
       "hi": "यह मेरी बेटी Sophia है।",
       "en": "This is my daughter, Sophia.",
       "tr": "Yeh meri beti Sophia hai."
     },
     {
-      "hi": "आपसे मिलकर खुशी हुई।",
+      "pronunciation": "Aapse milkar khushi hui",
+      "displayText": "Aapse milkar khushi hui"
       "en": "Nice to meet you.",
       "tr": "Aapse milkar khushi hui."
     },
     {
       "hi": "आप यहाँ कब से रहते हैं?",
-      "en": "Since when have you been living here?",
+      "pronunciation": "Aap yahan kab se rehte hain?",
+      "displayText": "Aap yahan kab se rehte hain?"
       "tr": "Aap yahan kab se rehte hain?"
     },
     {
       "hi": "चाय पीने आइएगा।",
       "en": "Please come for tea.",
-      "tr": "Chai peene aaiyega."
+      "pronunciation": "Chai peene aaiyega",
+      "displayText": "Chai peene aaiyega"
     }
   ],
-  "introductions": [
+      "pronunciation": "Hum Minneapolis, America se hain",
+      "displayText": "Hum Minneapolis, America se hain"
     {
       "hi": "हम Minneapolis, America से हैं।",
       "en": "We're from Minneapolis, America.",
       "tr": "Hum Minneapolis, America se hain."
     },
-    {
+      "pronunciation": "Hum yahan chhe mahine rehte hain",
+      "displayText": "Hum yahan chhe mahine rehte hain"
       "hi": "हम यहाँ छह महीने रहते हैं।",
       "en": "We live here for six months.",
       "tr": "Hum yahan chhe mahine rehte hain."
     },
     {
-      "hi": "कल मिलते हैं?",
+      "pronunciation": "Kal milte hain?",
+      "displayText": "Kal milte hain?"
       "en": "Shall we meet tomorrow?",
       "tr": "Kal milte hain?"
     },
     {
       "hi": "यह मेरे पति Jonathan हैं।",
-      "en": "This is my husband, Jonathan.",
+      "pronunciation": "Yeh mere pati Jonathan hain",
+      "displayText": "Yeh mere pati Jonathan hain"
       "tr": "Yeh mere pati Jonathan hain."
     },
     {
       "hi": "आपका नाम क्या है?",
       "en": "What is your name?",
-      "tr": "Aapka naam kya hai?"
+      "pronunciation": "Aapka naam kya hai?",
+      "displayText": "Aapka naam kya hai?"
     }
   ],
   "church": [
@@ -129,26 +152,31 @@
       "hi": "यीशु में शांति मिले।",
       "en": "May you find peace in Jesus.",
       "tr": "Yeshu mein shanti mile."
-    },
-    {
+      "pronunciation": "Yeshu mein shanti mile",
+      "displayText": "Yeshu mein shanti mile"
+      "pronunciation": "Aap kaisi hain, Aunty ji?",
+      "displayText": "Aap kaisi hain, Aunty ji?"
       "hi": "आप कैसी हैं, आंटी जी?",
       "en": "How are you, Aunty?",
       "tr": "Aap kaisi hain, Aunty ji?"
     },
     {
-      "hi": "प्रार्थना के लिए धन्यवाद।",
+      "pronunciation": "Prarthana ke liye dhanyavaad",
+      "displayText": "Prarthana ke liye dhanyavaad"
       "en": "Thank you for the prayer.",
       "tr": "Prarthana ke liye dhanyavaad."
     },
     {
       "hi": "प्रभु आपको आशीष दे।",
-      "en": "May the Lord bless you.",
+      "pronunciation": "Prabhu aapko aashish de",
+      "displayText": "Prabhu aapko aashish de"
       "tr": "Prabhu aapko aashish de."
     },
     {
       "hi": "आज का संदेश बहुत अच्छा था।",
       "en": "Today's message was very good.",
-      "tr": "Aaj ka sandesh bahut accha tha."
+      "pronunciation": "Aaj ka sandesh bahut accha tha",
+      "displayText": "Aaj ka sandesh bahut accha tha"
     }
   ]
 }
