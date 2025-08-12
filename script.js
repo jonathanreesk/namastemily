@@ -373,10 +373,11 @@ function webSpeechDictation() {
 
 let staticPhrases = {};
 let phrasePacks = {};
+const phrasesBar = document.getElementById("phrasesBar");
 
 async function loadPhrases() {
   try {
-    const resp = await fetch('/phrases.json');
+    const resp = await fetch("/phrases.json");
     staticPhrases = await resp.json();
     console.log('Static phrases loaded:', Object.keys(staticPhrases));
     phrasePacks = { ...staticPhrases }; // Use static phrases as base
@@ -385,11 +386,12 @@ async function loadPhrases() {
   }
 }
 
-const phrasesBar = document.getElementById("phrasesBar");
-
 function renderPhrases() {
   const scene = sceneSel.value;
   const pack = phrasePacks[scene] || [];
+  const isAI = pack !== staticPhrases[scene]; // Check if these are AI phrases
+  console.log('Rendering', pack.length, isAI ? 'AI' : 'static', 'phrases for scene:', scene);
+  
   phrasesBar.innerHTML = "";
   
   if (pack.length === 0) {
@@ -425,6 +427,14 @@ function renderPhrases() {
     });
     phrasesBar.appendChild(b);
   });
+  
+  // Add indicator for AI vs static phrases
+  if (isAI) {
+    const indicator = document.createElement("div");
+    indicator.className = "ai-indicator";
+    indicator.innerHTML = '<span style="color: var(--secondary-600); font-size: 0.875rem; font-weight: 600;">🤖 AI Personalized</span>';
+    phrasesBar.appendChild(indicator);
+  }
 }
 
 sceneSel.addEventListener("change", () => {
@@ -704,19 +714,6 @@ window.addEventListener("load", () => {
     // Load voices immediately and on change
     loadVoices();
     speechSynthesis.onvoiceschanged = loadVoices;
-    
-    // Force voice loading on mobile
-    setTimeout(() => {
-      const voices = speechSynthesis.getVoices();
-      if (voices.length === 0) {
-        // Trigger voice loading on mobile
-        const utterance = new SpeechSynthesisUtterance('');
-        speechSynthesis.speak(utterance);
-        speechSynthesis.cancel();
-        // Try loading again after a delay
-        setTimeout(loadVoices, 1000);
-      }
-    }, 100);
   }
   
   GAMIFY.init();
