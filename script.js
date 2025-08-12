@@ -371,15 +371,10 @@ function webSpeechDictation() {
   recog.start();
 }
 
-// Phrase packs
-const phrasesBar = document.getElementById("phrasesBar");
+    staticPhrases = await resp.json();
+    console.log('Static phrases loaded:', Object.keys(staticPhrases));
 let phrasePacks = {};
-
-async function loadPhrases() {
-  try {
-    const resp = await fetch("phrases.json");
-    phrasePacks = await resp.json();
-    renderPhrases();
+    phrasePacks = { ...staticPhrases }; // Use static phrases as base
   } catch (e) {
     console.warn("Could not load phrases:", e);
   }
