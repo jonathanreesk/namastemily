@@ -145,13 +145,15 @@ async function speakWithAzure(text) {
     // Stop any currently playing audio first
     stopCurrentAudio();
     
-    const isHindiPhrase = /[\u0900-\u097F]/.test(text);
+    const hindiChars = text.match(/[\u0900-\u097F]/g);
+    const isHindiPhrase = !!hindiChars;
     console.log('Attempting Azure TTS for:', text.substring(0, 50) + '...');
     console.log('Text contains Hindi characters:', isHindiPhrase);
-    console.log('Hindi characters found:', text.match(/[\u0900-\u097F]/g) || 'none');
+    console.log('Hindi characters found:', hindiChars || 'none');
+    console.log('Hindi character count:', hindiChars ? hindiChars.length : 0);
     toast("🔊 Playing audio...");
     
-    const resp = await fetch(`/.netlify/functions/speech`, {
+    const resp = await fetch(`/api/speech`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, slow: true })
