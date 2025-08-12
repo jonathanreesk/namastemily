@@ -331,7 +331,7 @@ header {
 
 .msg-content {
   margin: 0;
-  font-weight: 500;
+  gap: var(--space-2);
 }
 
 .listen-btn {
@@ -354,6 +354,28 @@ header {
   background: var(--gray-50);
   color: var(--gray-800);
   border-color: var(--gray-400);
+}
+
+.play-btn {
+  background: var(--success-50);
+  border-color: var(--success-500);
+  color: var(--success-700);
+}
+
+.play-btn:hover {
+  background: var(--success-100);
+  border-color: var(--success-600);
+}
+
+.stop-btn {
+  background: var(--error-50);
+  border-color: var(--error-500);
+  color: var(--error-700);
+}
+
+.stop-btn:hover {
+  background: var(--error-100);
+  border-color: var(--error-600);
 }
 
 @keyframes slideIn {

@@ -68,37 +68,16 @@ function normalizeHinglishToDev(text) {
     .replace(/\bkiraya\b/gi, 'किराया');
 }
 
-function transliterateHindi(text) {
-  if (!text || typeof text !== 'string') return text;
-  
-  // Check if text contains Hindi characters
-  if (!/[\u0900-\u097F]/.test(text)) return text;
-  
-  let result = '';
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    
-    // If it's a Hindi character, transliterate it
-    if (TRANSLITERATION_MAP[char]) {
-      result += TRANSLITERATION_MAP[char];
-    } else if (char >= '\u0900' && char <= '\u097F') {
-      // Unknown Devanagari character, keep as is
-      result += char;
-    } else {
-      // Non-Hindi character (space, punctuation, English), keep as is
-      result += char;
-    }
-  }
-  
-  return result;
-}
-
 const chat = document.getElementById("chat");
 const input = document.getElementById("input");
 const sendBtn = document.getElementById("sendBtn");
 const micBtn = document.getElementById("micBtn");
 const sceneSel = document.getElementById("scene");
 const levelSel = document.getElementById("level");
+
+// Audio management - GLOBAL VARIABLES
+let currentAudio = null;
+let currentPlayingButton = null;
 
 let history = [
   { role: "assistant", content: "Hi Emily! I'm Aasha Aunty, your friendly Hindi teacher. I speak in English to help you learn Hindi step by step. Let's start with something simple - which situation would you like to practice first? Market shopping, taking a taxi, or meeting your neighbors?" }
@@ -118,13 +97,33 @@ function addMsg(role, content) {
     div.innerHTML = `
       <div class="msg-header">
         <strong>${prefix.split(':')[0]}:</strong>
-        <button class="listen-btn" onclick="speak('${content.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
-                ontouchstart="" style="cursor: pointer;">
-          <span>🔊</span>
-        </button>
+        <div class="audio-controls">
+          <button class="listen-btn play-btn" data-text="${content.replace(/'/g, "\\'").replace(/"/g, '\\"')}" 
+                  style="cursor: pointer;">
+            <span>🔊</span>
+          </button>
+          <button class="listen-btn stop-btn" style="cursor: pointer; display: none;">
+            <span>⏹️</span>
+          </button>
+        </div>
       </div>
       <div class="msg-content">${content}</div>
     `;
+    
+    // Add event listeners after creating the element
+    const playBtn = div.querySelector('.play-btn');
+    const stopBtn = div.querySelector('.stop-btn');
+    
+    playBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handlePlayClick(playBtn, stopBtn, content);
+    });
+    
+    stopBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleStopClick(playBtn, stopBtn);
+    });
+    
   } else {
     div.innerHTML = `<strong>${prefix.split(':')[0]}:</strong> ${content}`;
   }
@@ -133,26 +132,113 @@ function addMsg(role, content) {
   chat.scrollTop = chat.scrollHeight;
 }
 
+function handlePlayClick(playBtn, stopBtn, text) {
+  console.log('Play button clicked for:', text.substring(0, 30) + '...');
+  
+  // ALWAYS stop any current audio first
+  stopAllAudio();
+  
+  // Show stop button, hide play button
+  playBtn.style.display = 'none';
+  stopBtn.style.display = 'inline-flex';
+  
+  // Track current buttons
+  currentPlayingButton = { playBtn, stopBtn };
+  
+  // Start playing audio
+  speakWithAzure(text);
+}
+
+function handleStopClick(playBtn, stopBtn) {
+  console.log('Stop button clicked');
+  stopAllAudio();
+}
+
+function stopAllAudio() {
+  console.log('Stopping all audio...');
+  
+  // Stop current audio if playing
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio = null;
+  }
+  
+  // Reset all buttons to play state
+  document.querySelectorAll('.play-btn').forEach(btn => {
+    btn.style.display = 'inline-flex';
+  });
+  document.querySelectorAll('.stop-btn').forEach(btn => {
+    btn.style.display = 'none';
+  });
+  
+  currentPlayingButton = null;
+  console.log('All audio stopped and buttons reset');
+}
+
+function render() {
+  chat.innerHTML = "";
+  history.forEach(m => {
+    const div = document.createElement("div");
+    div.className = `msg ${m.role}`;
+    
+    if (m.role === "assistant") {
+      div.innerHTML = `
+        <div class="msg-header">
+          <strong>Asha Aunty:</strong>
+          <div class="audio-controls">
+            <button class="listen-btn play-btn" data-text="${m.content.replace(/'/g, "\\'").replace(/"/g, '\\"')}" 
+                    style="cursor: pointer;">
+              <span>🔊</span>
+            </button>
+            <button class="listen-btn stop-btn" style="cursor: pointer; display: none;">
+              <span>⏹️</span>
+            </button>
+          </div>
+        </div>
+        <div class="msg-content">${m.content}</div>
+      `;
+      
+      // Add event listeners after creating the element
+      const playBtn = div.querySelector('.play-btn');
+      const stopBtn = div.querySelector('.stop-btn');
+      
+      playBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handlePlayClick(playBtn, stopBtn, m.content);
+      });
+      
+      stopBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleStopClick(playBtn, stopBtn);
+      });
+      
+    } else {
+      div.innerHTML = `<strong>You:</strong> ${m.content}`;
+    }
+    
+    chat.appendChild(div);
+  });
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function speak(text) {
+  speakWithAzure(text);
+}
+
 async function speakWithAzure(text) {
   try {
-    console.log('Attempting Azure TTS for:', text.substring(0, 50) + '...');
-    toast("🔊 Playing audio...");
+    console.log('Starting Azure TTS for:', text.substring(0, 50) + '...');
+    toast("🔊 Loading audio...");
     
-    const resp = await fetch(`${API}/api/speech`, {
+    const resp = await fetch(`/api/speech`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, slow: true })
     });
     
     if (!resp.ok) {
-      let errorText;
-      try {
-        errorText = await resp.text();
-      } catch (e) {
-        errorText = `HTTP ${resp.status}`;
-      }
-      console.error('Speech API error:', resp.status, errorText);
-      throw new Error(`Speech API failed: ${resp.status} - ${errorText}`);
+      throw new Error(`HTTP ${resp.status}`);
     }
     
     const blob = await resp.blob();
@@ -163,54 +249,53 @@ async function speakWithAzure(text) {
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     
+    // Set as current audio
+    currentAudio = audio;
+    
     audio.onplay = () => {
-      toast("🔊 Playing Hindi audio!");
+      toast("🔊 Playing audio!");
     };
     
     audio.onended = () => {
-      URL.revokeObjectURL(url); // Clean up memory
+      console.log('Audio ended naturally');
+      URL.revokeObjectURL(url);
+      currentAudio = null;
+      
+      // Reset buttons to play state
+      if (currentPlayingButton) {
+        currentPlayingButton.playBtn.style.display = 'inline-flex';
+        currentPlayingButton.stopBtn.style.display = 'none';
+        currentPlayingButton = null;
+      }
     };
     
     audio.onerror = () => {
-      throw new Error("Audio playback failed");
+      console.error('Audio playback failed');
+      currentAudio = null;
+      
+      // Reset buttons on error
+      if (currentPlayingButton) {
+        currentPlayingButton.playBtn.style.display = 'inline-flex';
+        currentPlayingButton.stopBtn.style.display = 'none';
+        currentPlayingButton = null;
+      }
+      
+      toast("Audio playback failed");
     };
     
     await audio.play();
     
   } catch (e) {
-    console.error('Speech API failed, falling back to browser TTS:', e);
-    toast(`Azure TTS failed (${e.message}), using browser voice...`);
+    console.error('Speech failed:', e);
+    toast("Speech failed: " + e.message);
     
-    // Fallback to browser TTS if Azure TTS fails
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "hi-IN";
-      u.rate = 0.6;
-      u.pitch = 1.0;
-      u.volume = 0.9;
-      
-      // Try to find the best Hindi voice available
-      const voices = window.speechSynthesis.getVoices();
-      const hindiVoice = voices.find(voice => 
-        voice.lang.includes('hi') || 
-        voice.name.toLowerCase().includes('hindi') ||
-        voice.name.toLowerCase().includes('india')
-      );
-      
-      if (hindiVoice) {
-        u.voice = hindiVoice;
-      }
-      
-      u.onerror = () => {
-        toast("Audio not available on this device 📱");
-      };
-      
-      window.speechSynthesis.speak(u);
-    } else {
-      toast("Audio not available on this device 📱");
+    // Reset buttons on error
+    if (currentPlayingButton) {
+      currentPlayingButton.playBtn.style.display = 'inline-flex';
+      currentPlayingButton.stopBtn.style.display = 'none';
+      currentPlayingButton = null;
     }
+    currentAudio = null;
   }
 }
 
@@ -226,7 +311,7 @@ async function send() {
   input.value = "";
 
   try {
-    const resp = await fetch(`${API}/api/roleplay`, {
+    const resp = await fetch(`/api/roleplay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -268,10 +353,6 @@ input.addEventListener("keydown", (e) => {
 });
 
 // Mic handling
-let rec;
-let chunks = [];
-let recognizing = false;
-
 micBtn.addEventListener("click", async () => {
   webSpeechDictation();
 });
@@ -311,195 +392,106 @@ function webSpeechDictation() {
   recog.start();
 }
 
-// Phrase packs
+// ===== PHRASES SYSTEM - STATIC ONLY =====
 const phrasesBar = document.getElementById("phrasesBar");
 let phrasePacks = {};
 
+// Load phrases from phrases.json - NO AI
 async function loadPhrases() {
   try {
-    // Try to load AI-generated phrases first
-    await loadAIPhrases();
-    
-    // Fallback to static phrases if AI fails
-    if (Object.keys(phrasePacks).length === 0) {
-      await loadStaticPhrases();
-    }
-    renderPhrases();
-  } catch (e) {
-    console.warn("Could not load phrases:", e);
-  }
-}
-
-async function loadStaticPhrases() {
-  try {
-    console.log('Loading static phrases as fallback');
+    console.log('Loading static phrases from phrases.json');
     const resp = await fetch("phrases.json");
-    const staticPhrases = await resp.json();
-    console.log('Static phrases loaded:', Object.keys(staticPhrases));
-    // Merge with existing phrases
-    Object.keys(staticPhrases).forEach(scene => {
-      if (!phrasePacks[scene] || phrasePacks[scene].length === 0) {
-        phrasePacks[scene] = staticPhrases[scene];
-        console.log('Added static phrases for scene:', scene);
-      }
-    });
+    if (resp.ok) {
+      const staticPhrases = await resp.json();
+      console.log('Static phrases loaded:', Object.keys(staticPhrases));
+      
+      // Convert phrases.json format to our internal format
+      Object.keys(staticPhrases).forEach(scene => {
+        phrasePacks[scene] = staticPhrases[scene].map(p => ({
+          hi: p.hindiPhrase,
+          tr: p.pronunciation,
+          en: p.englishMeaning,
+          intro: p.englishIntro
+        }));
+      });
+      
+      console.log('Phrase packs ready:', Object.keys(phrasePacks));
+      renderPhrases();
+    } else {
+      console.warn('Could not load phrases.json');
+      toast("Could not load phrases");
+    }
   } catch (e) {
-    console.error("Could not load static phrases:", e);
+    console.error('Error loading phrases:', e);
+    toast("Error loading phrases");
   }
 }
 
-async function loadAIPhrases() {
-  try {
-    console.log('Loading AI phrases for scene:', sceneSel?.value);
-    const userProgress = {
-      scene: sceneSel?.value || 'market',
-      level: levelSel?.value || 'beginner',
-      xp: GAMIFY.state?.xp || 0,
-      scenes: GAMIFY.state?.scenes || {}
-    };
-    
-    console.log('Sending request to missions API with:', userProgress);
-    const resp = await fetch(`${API}/api/missions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: 'suggestions', userProgress })
-    });
-    
-    if (!resp.ok) {
-      const errorText = await resp.text();
-      console.error('AI phrase generation failed:', resp.status, errorText);
-      throw new Error('Failed to generate suggestions');
-    }
-    
-    const suggestions = await resp.json();
-    console.log('AI suggestions received:', JSON.stringify(suggestions, null, 2));
-    
-    // Convert AI suggestions to phrase pack format
-    const scene = sceneSel?.value || 'market';
-    if (Array.isArray(suggestions) && suggestions.length > 0) {
-      phrasePacks[scene] = suggestions;
-      console.log('Successfully stored AI phrases for scene:', scene);
-    } else {
-      console.error('Invalid AI suggestions format - not an array or empty:', suggestions);
-      throw new Error('Invalid suggestions format');
-    }
-    
-  } catch (e) {
-    console.error('AI phrase generation failed with error:', e);
-    // Force fallback to static phrases
-    await loadStaticPhrases();
-  }
-}
 function renderPhrases() {
   const scene = sceneSel.value;
   const pack = phrasePacks[scene] || [];
-  console.log('Rendering phrases for scene:', scene, 'Pack length:', pack.length);
-  console.log('Available phrase packs:', Object.keys(phrasePacks));
+  
+  console.log(`Rendering ${pack.length} phrases for scene: ${scene}`);
+  
   phrasesBar.innerHTML = "";
   
   if (pack.length === 0) {
-    console.log('No phrases found, attempting to load AI phrases');
-    phrasesBar.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 20px;">Loading personalized phrases... 🤖</p>';
-    // Try to load AI phrases for this scene
-    setTimeout(async () => {
-      await loadAIPhrases();
-      if (phrasePacks[scene]?.length > 0) {
-        console.log('AI phrases loaded successfully, re-rendering');
-        renderPhrases(); // Re-render with new phrases
-      } else {
-        console.log('AI phrases failed, loading static phrases');
-        // Fallback to static phrases if AI fails
-        await loadStaticPhrases();
-        renderPhrases();
-      }
-    }, 100);
+    phrasesBar.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 20px;">No phrases available for this scene</p>';
     return;
   }
   
-  console.log('Rendering', pack.length, 'phrases');
   pack.forEach(p => {
     const b = document.createElement("button");
     b.className = "phrase-btn";
-    // Handle both AI format and static format
-    const displayText = p.englishIntro || p.en || p.hindiPhrase || p.hi;
-    const tooltip = p.englishMeaning || p.en || p.englishIntro;
+    
+    // Display transliteration for readability
+    const displayText = p.tr || p.en || 'Unknown phrase';
+    const tooltip = p.intro || p.en || 'Hindi phrase';
     
     b.textContent = displayText;
     b.title = tooltip;
-    b.style.cursor = "pointer";
-    b.setAttribute("ontouchstart", ""); // Enable :active on iOS
+    
     b.addEventListener("click", () => {
-      // Create a lesson format: English intro + Hindi phrase
-      const englishIntro = p.englishIntro || `Let me teach you: "${p.en || p.englishMeaning}"`;
-      const hindiPhrase = p.hindiPhrase || p.hi;
-      const pronunciation = p.pronunciation || p.tr;
+      // Put transliteration in input for practice
+      input.value = p.tr || p.en;
       
-      // Add the phrase lesson to chat
-      const lessonMessage = `${englishIntro} The Hindi is: ${hindiPhrase}${pronunciation ? ` (${pronunciation})` : ''}`;
-      addMsg("user", `Teach me: "${p.englishMeaning || p.en || p.englishIntro}"`);
-      
-      // Auto-respond from Asha with the lesson
-      setTimeout(() => {
-        addMsg("assistant", lessonMessage);
-        speak(lessonMessage);
-      }, 500);
-      
-      // Also put the pronunciation in the input for practice
-      setTimeout(() => {
-        input.value = pronunciation || hindiPhrase;
-      }, 1000);
+      // Speak the Hindi phrase
+      if (p.hi) {
+        speak(p.hi);
+      }
       
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
-      toast("Phrase added to conversation! Practice saying it 🗣️");
+      toast("Phrase added! Try saying it out loud 🗣️");
     });
-    // Add touch event for better mobile response
-    b.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      b.style.transform = "scale(0.95)";
-    });
-    b.addEventListener("touchend", (e) => {
-      e.preventDefault();
-      b.style.transform = "scale(1)";
-    });
+    
     phrasesBar.appendChild(b);
   });
 }
 
 sceneSel.addEventListener("change", () => {
+  console.log('Scene changed to:', sceneSel.value);
   renderPhrases();
   
   // Update greeting based on scene
   if (history.length <= 1) {
     const s = sceneSel.value;
+    let open = "Namaste! Kaise madad karun? (Hello! How can I help?)";
     
-    // Generate contextual greeting through AI
-    addMsg("user", `I want to practice the ${s} scene. Can you help me?`);
-    setTimeout(async () => {
-      try {
-        const resp = await fetch(`${API}/api/roleplay`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            history: [...history, { role: "user", content: `I want to practice the ${s} scene. Can you help me?` }],
-            scene: s,
-            level: levelSel.value
-          })
-        });
-        
-        if (resp.ok) {
-          const data = await resp.json();
-          addMsg("assistant", data.reply);
-        }
-      } catch (e) {
-        console.error('Scene change error:', e);
-        addMsg("assistant", `Perfect! Let's practice ${s} situations. I'll teach you useful Hindi phrases for this scene step by step! 🌟`);
-      }
-    }, 500);
+    const greetings = {
+      market: "Great choice! Let's learn essential market phrases. I'll teach you in English first, then we'll practice the Hindi. You'll be buying vegetables like a pro! 🥕",
+      taxi: "Perfect! Taxi phrases are super useful. I'll explain each phrase in English, then teach you the Hindi pronunciation. Let's learn how to get around safely! 🚕", 
+      rickshaw: "Excellent! Rickshaw rides are fun. I'll teach you the English meaning first, then the Hindi phrases for negotiating politely. 🛺",
+      neighbor: "Wonderful! Meeting neighbors is so important. I'll explain what to say in English, then teach you the Hindi greetings and introductions. 👋",
+      introductions: "Perfect choice! I'll help you learn how to introduce yourself and your family. English explanations first, then Hindi practice! 🤝",
+      church: "Great! I'll teach you respectful phrases for church interactions. English context first, then meaningful Hindi phrases! ⛪"
+    };
+    
+    open = greetings[s] || open;
+    history = [{ role: "assistant", content: open }];
+    render();
   }
 });
-
-window.addEventListener("load", loadPhrases);
 
 // ===== GAMIFICATION SYSTEM =====
 const streakEl = document.getElementById("streak");
@@ -582,7 +574,7 @@ const GAMIFY = {
     const push = (id, label, emo) => { 
       if (!b[id]) { 
         b[id] = {label, emo, date: new Date().toISOString()}; 
-        toast(emo + " Achievement unlocked: " + label + "!"); 
+        toast(`${emo} Achievement unlocked: ${label}!`); 
         confetti(); 
       } 
     };
@@ -626,110 +618,32 @@ const GAMIFY = {
 
 // Daily Missions
 const MISSIONS = {
-  currentMission: null,
+  pool: [
+    {scene:"market", text:"Buy 2 vegetables and ask about the price politely"},
+    {scene:"rickshaw", text:"Ask for a ride and practice friendly bargaining"},
+    {scene:"introductions", text:"Introduce Jonathan and Sophia to a neighbor"},
+    {scene:"church", text:"Greet an elder respectfully and say thank you"},
+    {scene:"neighbor", text:"Ask a neighbor how long they've lived there"},
+    {scene:"taxi", text:"Ask about fare and request careful driving"}
+  ],
   
-  async generateDaily() {
-    try {
-      const userProgress = {
-        xp: GAMIFY.state?.xp || 0,
-        scenes: GAMIFY.state?.scenes || {},
-        streak: GAMIFY.state?.streak || 0,
-        completedToday: GAMIFY.state?.missionCompletedToday || false
-      };
-      
-      const resp = await fetch(`${API}/api/missions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: 'mission', userProgress })
-      });
-      
-      if (!resp.ok) {
-        console.warn('Mission API failed, using fallback mission');
-        return this.getFallbackMission();
-      }
-      
-      try {
-        const mission = await resp.json();
-        if (mission.error) {
-          console.warn('Mission API returned error, using fallback mission');
-          return this.getFallbackMission();
-        }
-        state.dailyMission = mission;
-        state.lastMissionDate = today;
-        saveState();
-        return mission;
-      } catch (parseError) {
-        console.warn('Failed to parse mission response, using fallback mission');
-        return this.getFallbackMission();
-      }
-    } catch (error) {
-      console.warn('Mission generation failed, using fallback mission:', error);
-      return this.getFallbackMission();
-    }
+  pick() {
+    const day = new Date().getDate();
+    return this.pool[day % this.pool.length];
   },
   
-  getFallbackMission() {
-    const fallbackMissions = [
-      {
-        scene: "market",
-        title: "Buy Fresh Vegetables",
-        description: "Visit the local sabzi mandi and practice asking for seasonal vegetables in Hindi",
-        specificGoals: ["Ask for 2 vegetables", "Negotiate price politely", "Ask if items are fresh"],
-        culturalTip: "In Indian markets, gentle bargaining is expected and shows engagement"
-      },
-      {
-        scene: "taxi",
-        title: "Navigate to Temple",
-        description: "Take a taxi to the local temple and practice giving directions in Hindi",
-        specificGoals: ["Tell driver destination", "Ask about fare", "Say thank you"],
-        culturalTip: "Always confirm the fare before starting your journey"
-      },
-      {
-        scene: "neighbor",
-        title: "Meet Your Neighbor",
-        description: "Introduce yourself to a new neighbor and practice basic conversation",
-        specificGoals: ["Share your name", "Ask about their family", "Exchange pleasantries"],
-        culturalTip: "Indians appreciate when foreigners make an effort to speak Hindi"
-      }
-    ];
-    
-    const mission = fallbackMissions[Math.floor(Math.random() * fallbackMissions.length)];
-    GAMIFY.state.dailyMission = mission;
-    GAMIFY.state.lastMissionDate = new Date().toDateString();
-    GAMIFY.save(GAMIFY.state);
-    return mission;
-  },
-  
-  async render() {
-    const m = this.currentMission || await this.generateDaily();
-    missionText.innerHTML = `
-      <strong>${m.title}</strong><br>
-      ${m.description}
-      ${m.culturalTip ? `<br><em>💡 ${m.culturalTip}</em>` : ''}
-    `;
-    if (m.scene && sceneSel) {
-      sceneSel.value = m.scene;
-    }
+  render() {
+    const m = this.pick();
+    missionText.textContent = `${m.text} (Scene: ${m.scene})`;
+    sceneSel.value = m.scene;
     renderPhrases();
   },
   
   complete() {
-    GAMIFY.state.missionCompletedToday = true;
     GAMIFY.awardXP(20);
     GAMIFY.awardChai(1);
-    GAMIFY.save(GAMIFY.state);
     toast("🎯 Mission completed! +20 XP, +1 chai cup!");
     confetti();
-    
-    // Add mission completion to chat
-    const mission = this.currentMission;
-    if (mission) {
-      addMsg("user", `I completed today's mission: ${mission.title}! 🎯`);
-      // Auto-respond from Asha
-      setTimeout(() => {
-        addMsg("assistant", `Wonderful, Emily! You completed "${mission.title}" - that's exactly the kind of practice that will help you feel confident in India. Keep up the great work! 🌟`);
-      }, 1000);
-    }
   }
 };
 
@@ -752,7 +666,7 @@ function toast(msg) {
   toastTimer = setTimeout(() => {
     t.style.animation = 'toastSlide 0.3s ease-out reverse';
     setTimeout(() => t.remove(), 300);
-  }, 3000);
+  }, 300);
 }
 
 // Confetti animation
@@ -780,63 +694,66 @@ function confetti() {
 
 // Initialize everything
 window.addEventListener("load", () => {
+  // Initialize audio context on first user interaction for mobile
+  const initAudioContext = async () => {
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === 'suspended') {
+        console.log('Initializing audio context...');
+        await audioContext.resume();
+        console.log('Audio context initialized successfully');
+      }
+    } catch (e) {
+      console.warn('Audio context initialization failed:', e);
+    }
+  };
+  
+  // Add one-time click listener to initialize audio on mobile
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (isMobile) {
+    const initAudio = () => {
+      initAudioContext();
+      document.removeEventListener('touchstart', initAudio);
+      document.removeEventListener('click', initAudio);
+    };
+    document.addEventListener('touchstart', initAudio, { once: true });
+    document.addEventListener('click', initAudio, { once: true });
+  }
+  
   // Load voices for better Hindi TTS
   if ('speechSynthesis' in window) {
-    speechSynthesis.getVoices();
-    speechSynthesis.onvoiceschanged = () => {
-      speechSynthesis.getVoices();
-      console.log('Available voices:', speechSynthesis.getVoices().map(v => v.name + ' (' + v.lang + ')'));
+    // Function to load and display available voices
+    const loadVoices = () => {
+      const voices = speechSynthesis.getVoices();
+      console.log('Available voices:', voices.map(v => `${v.name} (${v.lang}) ${v.localService ? '[Local]' : '[Remote]'}`));
+      
+      // Find and log the best Hindi voices
+      const hindiVoices = voices.filter(v => 
+        v.lang.includes('hi') || 
+        v.lang === 'en-IN' ||
+        v.name.toLowerCase().includes('hindi') ||
+        v.name.toLowerCase().includes('india')
+      );
+      
+      if (hindiVoices.length > 0) {
+        console.log('Hindi/Indian voices found:', hindiVoices.map(v => `${v.name} (${v.lang})`));
+      } else {
+        console.log('No Hindi voices detected. Speech will use default voice.');
+      }
     };
     
-    // Force voice loading on mobile
-    setTimeout(() => {
-      const voices = speechSynthesis.getVoices();
-      if (voices.length === 0) {
-        // Trigger voice loading on mobile
-        const utterance = new SpeechSynthesisUtterance('');
-        speechSynthesis.speak(utterance);
-        speechSynthesis.cancel();
-      }
-    }, 100);
+    // Load voices immediately and on change
+    loadVoices();
+    speechSynthesis.onvoiceschanged = loadVoices;
   }
   
   GAMIFY.init();
-  MISSIONS.render(); // This will now generate AI missions
+  MISSIONS.render();
   GAMIFY.checkBadges();
+  loadPhrases(); // Load static phrases only
   
   // Welcome message
   setTimeout(() => {
     toast("Welcome to your Hindi learning journey, Emily! 🌟");
   }, 1000);
 });
-
-function render() {
-  chat.innerHTML = "";
-  history.forEach(m => {
-    const div = document.createElement("div");
-    div.className = `msg ${m.role}`;
-    
-    if (m.role === "assistant") {
-      div.innerHTML = `
-        <div class="msg-header">
-          <strong>Asha Aunty:</strong>
-          <button class="listen-btn" onclick="speak('${m.content.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
-                  ontouchstart="" style="cursor: pointer;">
-            <span>🔊</span>
-          </button>
-        </div>
-        <div class="msg-content">${m.content}</div>
-      `;
-    } else {
-      div.innerHTML = `<strong>You:</strong> ${m.content}`;
-    }
-    
-    chat.appendChild(div);
-  });
-  
-  chat.scrollTop = chat.scrollHeight;
-}
-
-function speak(text) {
-  speakWithAzure(text);
-}
