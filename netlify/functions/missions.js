@@ -1,4 +1,7 @@
 exports.handler = async (event, context) => {
+const { OpenAI } = require('openai');
+
+exports.handler = async (event, context) => {
   // Debug all environment variables
   console.log('Missions - All environment variables:', Object.keys(process.env));
   console.log('Missions - OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
@@ -53,21 +56,7 @@ exports.handler = async (event, context) => {
     }
     
     // Use dynamic import for OpenAI
-    let client;
-    try {
-      const { OpenAI } = await import('openai');
-      client = new OpenAI({ apiKey: apiKey });
-    } catch (importError) {
-      console.error('Failed to import OpenAI in missions:', importError);
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ 
-          error: "openai_import_failed", 
-          details: importError.message 
-        })
-      };
-    }
+    const client = new OpenAI({ apiKey: apiKey });
     
     let prompt = '';
     
