@@ -155,8 +155,10 @@ async function speakWithAzure(text) {
       let errorText;
       try {
         const resp = await fetch(`/.netlify/functions/roleplay`, {
-      } catch (e) {
+              } catch (e) {
         errorText = `HTTP ${resp.status}`;
+      }
+        )
       }
       console.error('Speech API error:', resp.status, errorText);
       throw new Error(`Speech API failed: ${resp.status} - ${errorText}`);

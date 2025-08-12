@@ -27,6 +27,16 @@ exports.handler = async (event, context) => {
   try {
     const { type, userProgress = {} } = JSON.parse(event.body || '{}');
     
+    if (!process.env.OPENAI_API_KEY) {
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: "OpenAI API key not configured. Please set OPENAI_API_KEY in Netlify environment variables." 
+        })
+      };
+    }
+    
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     
     let prompt = '';

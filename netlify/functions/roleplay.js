@@ -28,6 +28,16 @@ exports.handler = async (event, context) => {
   try {
     const { history = [], scene = "market", level = "beginner" } = JSON.parse(event.body || '{}');
 
+    if (!process.env.OPENAI_API_KEY) {
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: "OpenAI API key not configured. Please set OPENAI_API_KEY in Netlify environment variables." 
+        })
+      };
+    }
+
     // Read files from the correct location in Netlify
     const scenesPath = path.join(process.cwd(), 'server', 'scenes.json');
     const personaPath = path.join(process.cwd(), 'server', 'persona.txt');

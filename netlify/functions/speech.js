@@ -52,7 +52,7 @@ exports.handler = async (event, context) => {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
-          error: "Missing Azure speech environment variables",
+          error: "Azure speech service not configured. Please set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION in Netlify environment variables.",
           debug: { hasKey: !!key, hasRegion: !!region }
         })
       };
