@@ -452,15 +452,14 @@ const defaultPhrases = {
     { hi: "आशीर्वाद दीजिए", tr: "Aashirvaad dijiye", en: "Please give your blessings" },
     { hi: "जय हो", tr: "Jai ho", en: "Victory/Praise be" }
   ]
-};
+}
 
-// AI-generated phrases (loaded dynamically)
 let aiPhrasesLoaded = {};
 
 async function loadStaticPhrases() {
   try {
     console.log('Loading static phrases from phrases.json');
-    const resp = await fetch("phrases.json");
+    const resp = await fetch("/phrases.json");
     if (resp.ok) {
       const staticPhrases = await resp.json();
       console.log('Static phrases loaded from file:', Object.keys(staticPhrases));
