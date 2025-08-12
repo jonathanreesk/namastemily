@@ -1,4 +1,4 @@
-const { readFileSync } = require('fs');
+const fs = require('fs');
 const path = require('path');
 
 exports.handler = async (event, context) => {
@@ -47,11 +47,27 @@ exports.handler = async (event, context) => {
     }
 
     // Read files from the correct location in Netlify
-    const scenesPath = path.join(process.cwd(), 'server', 'scenes.json');
-    const personaPath = path.join(process.cwd(), 'server', 'persona.txt');
+    let scenes, persona;
+    try {
+      const scenesPath = path.join(process.cwd(), 'server', 'scenes.json');
+      const personaPath = path.join(process.cwd(), 'server', 'persona.txt');
+      
+      scenes = JSON.parse(fs.readFileSync(scenesPath, 'utf8'));
+      persona = fs.readFileSync(personaPath, 'utf8');
+    } catch (fileError) {
+      console.log('Using fallback persona and scenes due to file read error:', fileError.message);
+      // Fallback content
+      persona = "You are Aasha Aunty, a warm, encouraging Hindi teacher who speaks primarily in clear American English. Always speak in English first, then teach Hindi phrases.";
+      scenes = {
+        market: "You are teaching Emily market vocabulary in Hindi. Use English explanations first.",
+        taxi: "You are teaching Emily taxi phrases in Hindi. Use English explanations first.",
+        neighbor: "You are teaching Emily neighborly conversation in Hindi. Use English explanations first.",
+        church: "You are teaching Emily respectful Hindi phrases for church. Use English explanations first.",
+        rickshaw: "You are teaching Emily rickshaw phrases in Hindi. Use English explanations first.",
+        introductions: "You are teaching Emily introduction phrases in Hindi. Use English explanations first."
+      };
+    }
     
-    const scenes = JSON.parse(readFileSync(scenesPath, 'utf8'));
-    const persona = readFileSync(personaPath, 'utf8');
 
     const scenePersona = scenes[scene] || scenes.market;
     const system = [
@@ -67,14 +83,40 @@ exports.handler = async (event, context) => {
     ];
 
     // Use dynamic import for OpenAI
-    const { OpenAI } = await import('openai');
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    let client;
+    try {
+      const { OpenAI } = await import('openai');
+      client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    } catch (importError) {
+      console.error('Failed to import OpenAI:', importError);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: "openai_import_failed", 
+          details: importError.message 
+        })
+      };
+    }
     
-    const resp = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.6,
-      messages
-    });
+    let resp;
+    try {
+      resp = await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        temperature: 0.6,
+        messages
+      });
+    } catch (apiError) {
+      console.error('OpenAI API call failed:', apiError);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: "openai_api_failed", 
+          details: apiError.message 
+        })
+      };
+    }
     
     const reply = resp.choices?.[0]?.message?.content || "Namaste, Emily! Kaise madad karun? (How can I help?)";
 

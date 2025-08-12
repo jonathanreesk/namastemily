@@ -1,5 +1,3 @@
-const { OpenAI } = require('openai');
-
 exports.handler = async (event, context) => {
   // Handle CORS
   const headers = {
@@ -46,7 +44,22 @@ exports.handler = async (event, context) => {
       };
     }
     
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // Use dynamic import for OpenAI
+    let client;
+    try {
+      const { OpenAI } = await import('openai');
+      client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    } catch (importError) {
+      console.error('Failed to import OpenAI in missions:', importError);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: "openai_import_failed", 
+          details: importError.message 
+        })
+      };
+    }
     
     let prompt = '';
     
@@ -94,20 +107,33 @@ Format as JSON array:
 ]`;
     }
 
-    const resp = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.7,
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert in Indian culture and Hindi language learning. Generate realistic, culturally authentic content for an American family living in India. Always respond with valid JSON only."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ]
-    });
+    let resp;
+    try {
+      resp = await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        temperature: 0.7,
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert in Indian culture and Hindi language learning. Generate realistic, culturally authentic content for an American family living in India. Always respond with valid JSON only."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
+      });
+    } catch (apiError) {
+      console.error('OpenAI API call failed in missions:', apiError);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: "openai_api_failed", 
+          details: apiError.message 
+        })
+      };
+    }
     
     const content = resp.choices?.[0]?.message?.content || '{}';
     
