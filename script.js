@@ -129,10 +129,7 @@ function render() {
       
       // Add click handler after creating the element
       const listenBtn = div.querySelector('.listen-btn');
-      listenBtn.onclick = (e) => {
-        e.stopPropagation();
-        handleAudioClick(listenBtn, m.content);
-      };
+      updateButtonToPlay(listenBtn, m.content);
     } else {
       div.innerHTML = `<strong>You:</strong> ${m.content}`;
     }
@@ -333,14 +330,10 @@ function stopCurrentAudio() {
   
   // Reset all listen buttons to play state
   document.querySelectorAll('.listen-btn').forEach(btn => {
-    btn.innerHTML = '<span>🔊</span>';
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      const text = btn.getAttribute('data-original-text');
-      if (text) {
-        handleAudioClick(btn, text);
-      }
-    };
+    const text = btn.getAttribute('data-original-text');
+    if (text) {
+      updateButtonToPlay(btn, text);
+    }
   });
   
   currentPlayingButton = null;
@@ -365,16 +358,28 @@ function handleAudioClick(button, text) {
   
   // Set this button as playing
   currentPlayingButton = button;
-  button.innerHTML = '<span>⏹️</span>';
-  button.onclick = (e) => {
-    e.stopPropagation();
-    stopCurrentAudio();
-  };
+  updateButtonToStop(button, text);
   
   // Start playing audio
   speakWithAzure(text, button);
 }
 micBtn.addEventListener("click", async () => {
+function updateButtonToStop(button, text) {
+  button.innerHTML = '<span>⏹️</span>';
+  button.onclick = (e) => {
+    e.stopPropagation();
+    console.log('Stop button clicked');
+    stopCurrentAudio();
+  };
+}
+
+function updateButtonToPlay(button, text) {
+  button.innerHTML = '<span>🔊</span>';
+  button.onclick = (e) => {
+    e.stopPropagation();
+    handleAudioClick(button, text);
+  };
+}
   webSpeechDictation();
 });
 
