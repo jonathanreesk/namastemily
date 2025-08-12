@@ -143,6 +143,7 @@ function speak(text) {
 async function speakWithAzure(text) {
   try {
     console.log('Attempting Azure TTS for:', text.substring(0, 50) + '...');
+    console.log('Text contains Hindi:', /[\u0900-\u097F]/.test(text));
     toast("🔊 Playing audio...");
     
     const resp = await fetch(`/.netlify/functions/speech`, {
@@ -154,12 +155,14 @@ async function speakWithAzure(text) {
     if (!resp.ok) {
       let errorText;
       try {
-        errorText = await resp.text();
+        const errorData = await resp.json();
+        errorText = errorData.error || errorData.details || `HTTP ${resp.status}`;
+        console.error('Azure TTS error details:', errorData);
       } catch (e) {
         errorText = `HTTP ${resp.status}`;
       }
       console.error('Speech API error:', resp.status, errorText);
-      throw new Error(`Speech API failed: ${resp.status} - ${errorText}`);
+      throw new Error(`Azure TTS failed: ${errorText}`);
     }
     
     const blob = await resp.blob();

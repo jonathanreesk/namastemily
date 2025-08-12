@@ -3,7 +3,9 @@ exports.handler = async (event, context) => {
   console.log('Environment check:', {
     hasKey: !!process.env.AZURE_SPEECH_KEY,
     hasRegion: !!process.env.AZURE_SPEECH_REGION,
-    keyLength: process.env.AZURE_SPEECH_KEY ? process.env.AZURE_SPEECH_KEY.length : 0
+    keyLength: process.env.AZURE_SPEECH_KEY ? process.env.AZURE_SPEECH_KEY.length : 0,
+    region: process.env.AZURE_SPEECH_REGION,
+    keyPreview: process.env.AZURE_SPEECH_KEY ? process.env.AZURE_SPEECH_KEY.substring(0, 8) + '...' : 'undefined'
   });
 
   // Handle CORS
@@ -45,13 +47,14 @@ exports.handler = async (event, context) => {
       console.error('Missing Azure credentials:', { 
         key: !!key, 
         region: !!region,
-        keyPreview: key ? key.substring(0, 8) + '...' : 'undefined'
+        keyPreview: key ? key.substring(0, 8) + '...' : 'undefined',
+        allEnvVars: Object.keys(process.env).filter(k => k.includes('AZURE') || k.includes('SPEECH'))
       });
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
-          error: "Azure speech service not configured. Please set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION in Netlify environment variables.",
+          error: "Azure speech service not configured. Missing AZURE_SPEECH_KEY or AZURE_SPEECH_REGION environment variables.",
           debug: { hasKey: !!key, hasRegion: !!region }
         })
       };
@@ -102,10 +105,18 @@ exports.handler = async (event, context) => {
     const isHindiPhrase = /[\u0900-\u097F]/.test(text);
     const processedText = isHindiPhrase ? applyHindiPhonemes(text) : text;
     
+    console.log('Processing text:', {
+      originalText: text,
+      isHindiPhrase,
+      processedText: processedText.substring(0, 100) + '...'
+    });
+    
     // Use appropriate voice and language based on content
     const rate = slow ? "-10%" : "0%";
-    const voice = isHindiPhrase ? "hi-IN-SwaraNeural" : "en-US-JennyNeural";
+    const voice = isHindiPhrase ? "hi-IN-SwaraNeural" : "en-US-AriaNeural";
     const lang = isHindiPhrase ? "hi-IN" : "en-US";
+    
+    console.log('Voice selection:', { voice, lang, rate });
     
     const ssml = `
 <speak version="1.0" xml:lang="${lang}" xmlns:mstts="https://www.w3.org/2001/mstts">
@@ -115,6 +126,8 @@ exports.handler = async (event, context) => {
     </prosody>
   </voice>
 </speak>`.trim();
+
+    console.log('Generated SSML:', ssml);
 
     const url = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
     const resp = await fetch(url, {
@@ -127,6 +140,12 @@ exports.handler = async (event, context) => {
       body: ssml
     });
 
+    console.log('Azure API response:', {
+      status: resp.status,
+      statusText: resp.statusText,
+      headers: Object.fromEntries(resp.headers.entries())
+    });
+
     if (!resp.ok) {
       const errText = await resp.text();
       console.error('Azure API error:', resp.status, errText);
@@ -134,13 +153,17 @@ exports.handler = async (event, context) => {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
-          error: `azure_speech_failed: ${resp.status} ${errText}`,
-          status: resp.status
+          error: `Azure TTS failed: ${resp.status} ${resp.statusText}`,
+          status: resp.status,
+          details: errText,
+          ssml: ssml
         })
       };
     }
 
     const buf = Buffer.from(await resp.arrayBuffer());
+    console.log('Audio buffer size:', buf.length);
+    
     return {
       statusCode: 200,
       headers: {
