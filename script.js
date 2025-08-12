@@ -154,7 +154,7 @@ async function speakWithAzure(text) {
     if (!resp.ok) {
       let errorText;
       try {
-        errorText = await resp.text();
+        const resp = await fetch(`/.netlify/functions/roleplay`, {
       } catch (e) {
         errorText = `HTTP ${resp.status}`;
       }
