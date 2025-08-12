@@ -397,8 +397,11 @@ function webSpeechDictation() {
 // ===== PHRASES SYSTEM =====
 const phrasesBar = document.getElementById("phrasesBar");
 
-// Static phrase packs
-const phrasePacks = {
+// Static phrase packs - loaded from phrases.json
+let phrasePacks = {};
+
+// Default fallback phrases
+const defaultPhrases = {
   market: [
     { hi: "यह कितने का है?", tr: "Yah kitne ka hai?", en: "How much is this?" },
     { hi: "बहुत महंगा है", tr: "Bahut mahanga hai", en: "It's very expensive" },
@@ -447,8 +450,31 @@ const phrasePacks = {
 let aiPhrasesLoaded = {};
 
 async function loadStaticPhrases() {
-  // Static phrases are already loaded in phrasePacks
-  console.log("Static phrases loaded for all scenes");
+  try {
+    console.log('Loading static phrases from phrases.json');
+    const resp = await fetch("phrases.json");
+    if (resp.ok) {
+      const staticPhrases = await resp.json();
+      console.log('Static phrases loaded from file:', Object.keys(staticPhrases));
+      
+      // Convert phrases.json format to our internal format
+      Object.keys(staticPhrases).forEach(scene => {
+        phrasePacks[scene] = staticPhrases[scene].map(p => ({
+          hi: p.hindiPhrase,
+          tr: p.pronunciation,
+          en: p.englishMeaning,
+          intro: p.englishIntro
+        }));
+      });
+    } else {
+      console.warn('Could not load phrases.json, using defaults');
+      phrasePacks = { ...defaultPhrases };
+    }
+  } catch (e) {
+    console.warn('Error loading phrases.json:', e);
+    phrasePacks = { ...defaultPhrases };
+  }
+  console.log('Final phrase packs:', Object.keys(phrasePacks));
 }
 
 async function loadMorePhrases(scene) {
@@ -461,10 +487,17 @@ async function loadMorePhrases(scene) {
   try {
     toast("🤖 Loading personalized phrases...");
     
-    const resp = await fetch(`/.netlify/functions/phrases`, {
+    const resp = await fetch(`/.netlify/functions/missions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scene, level: levelSel.value })
+      body: JSON.stringify({ 
+        type: 'suggestions', 
+        userProgress: {
+          scene: scene,
+          level: levelSel.value,
+          xp: GAMIFY.state?.xp || 0
+        }
+      })
     });
     
     if (!resp.ok) {
@@ -472,7 +505,19 @@ async function loadMorePhrases(scene) {
     }
     
     const data = await resp.json();
-    aiPhrasesLoaded[scene] = data.phrases || [];
+    console.log('AI phrases received:', data);
+    
+    // Convert AI response to our format
+    if (Array.isArray(data)) {
+      aiPhrasesLoaded[scene] = data.map(p => ({
+        hi: p.hindiPhrase,
+        tr: p.pronunciation || p.displayText,
+        en: p.englishMeaning,
+        intro: p.englishIntro
+      }));
+    } else {
+      aiPhrasesLoaded[scene] = [];
+    }
     
     renderPhrases();
     toast("✨ Personalized phrases loaded!");
@@ -484,64 +529,73 @@ async function loadMorePhrases(scene) {
 }
 
 async function loadPhrases() {
-  try {
-    // Only load static phrases initially
-    await loadStaticPhrases();
-    renderPhrases();
-  } catch (e) {
-    console.warn("Could not load phrases:", e);
-  }
+  console.log('Loading phrases...');
+  await loadStaticPhrases();
+  renderPhrases();
 }
 
 function renderPhrases() {
   const scene = sceneSel.value;
   const staticPack = phrasePacks[scene] || [];
   const aiPack = aiPhrasesLoaded[scene] || [];
+  
+  console.log(`Rendering phrases for ${scene}:`, {
+    staticCount: staticPack.length,
+    aiCount: aiPack.length
+  });
+  
+  // Use AI phrases if available, otherwise static
   const pack = aiPack.length > 0 ? aiPack : staticPack;
   
   phrasesBar.innerHTML = "";
   
   if (pack.length === 0) {
-    phrasesBar.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No phrases available for this scene yet 📝</p>';
+    phrasesBar.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 20px;">Loading phrases... 📝</p>';
     return;
   }
+  
+  console.log('Rendering', pack.length, 'phrases for', scene);
   
   pack.forEach(p => {
     const b = document.createElement("button");
     b.className = "phrase-btn";
-    // Use transliteration for display
-    // Prioritize transliteration display for readability
-    const displayText = p.displayText || p.pronunciation || p.tr || p.englishMeaning || p.en;
-    const tooltip = `${p.englishMeaning || p.en} ${p.culturalNote ? '• ' + p.culturalNote : ''}`;
+    
+    // Display transliteration for readability
+    const displayText = p.tr || p.en || 'Unknown phrase';
+    const tooltip = p.intro || p.en || 'Hindi phrase';
+    
     b.textContent = displayText;
     b.title = tooltip;
-    b.style.cursor = "pointer";
-    b.setAttribute("ontouchstart", ""); // Enable :active on iOS
+    
     b.addEventListener("click", () => {
-      input.value = p.pronunciation || p.tr;
-      speak(p.hindiPhrase || p.hi, null); // Speak the Hindi phrase when clicked
+      // Put transliteration in input for practice
+      input.value = p.tr || p.en;
+      
+      // Speak the Hindi phrase
+      if (p.hi) {
+        speak(p.hi);
+      }
+      
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
       toast("Phrase added! Try saying it out loud 🗣️");
     });
-    // Add touch event for better mobile response
-    b.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      b.style.transform = "scale(0.95)";
-    });
-    b.addEventListener("touchend", (e) => {
-      e.preventDefault();
-      b.style.transform = "scale(1)";
-    });
+    
     phrasesBar.appendChild(b);
   });
   
-  // Add More Phrases button if AI phrases aren't loaded yet
+  // Add "More Phrases" button if AI phrases aren't loaded yet
   if (aiPack.length === 0 && staticPack.length > 0) {
     const moreBtn = document.createElement("button");
     moreBtn.className = "more-phrases-btn";
     moreBtn.innerHTML = '<span>🤖</span><span>More Phrases</span>';
-    moreBtn.onclick = () => loadMorePhrases(scene);
+    moreBtn.onclick = () => {
+      moreBtn.innerHTML = '<span>⏳</span><span>Loading AI...</span>';
+      moreBtn.disabled = true;
+      loadMorePhrases(scene).finally(() => {
+        moreBtn.disabled = false;
+      });
+    };
     phrasesBar.appendChild(moreBtn);
   }
   
@@ -555,6 +609,7 @@ function renderPhrases() {
 }
 
 sceneSel.addEventListener("change", () => {
+  console.log('Scene changed to:', sceneSel.value);
   renderPhrases();
   
   // Update greeting based on scene
@@ -577,7 +632,6 @@ sceneSel.addEventListener("change", () => {
   }
 });
 
-window.addEventListener("load", loadPhrases);
 
 // ===== GAMIFICATION SYSTEM =====
 const streakEl = document.getElementById("streak");
