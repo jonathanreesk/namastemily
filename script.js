@@ -164,9 +164,7 @@ async function speakWithAzure(text, button = null) {
       console.error('AZURE FAILED:', errorText);
       toast("❌ Azure Hindi voice not available - check credentials");
       if (button) {
-        button.innerHTML = '<span>🔊</span>';
-        button.onclick = () => handleAudioClick(button, text);
-        currentPlayingButton = null;
+        resetButton(button, text);
       }
       return; // NO FALLBACK - just stop here
     }
@@ -178,9 +176,7 @@ async function speakWithAzure(text, button = null) {
       console.error('AZURE returned empty audio');
       toast("❌ Azure returned empty audio");
       if (button) {
-        button.innerHTML = '<span>🔊</span>';
-        button.onclick = () => handleAudioClick(button, text);
-        currentPlayingButton = null;
+        resetButton(button, text);
       }
       return; // NO FALLBACK
     }
@@ -189,9 +185,7 @@ async function speakWithAzure(text, button = null) {
       console.error('AZURE returned non-audio:', blob.type);
       toast("❌ Azure returned invalid audio format");
       if (button) {
-        button.innerHTML = '<span>🔊</span>';
-        button.onclick = () => handleAudioClick(button, text);
-        currentPlayingButton = null;
+        resetButton(button, text);
       }
       return; // NO FALLBACK
     }
@@ -212,20 +206,20 @@ async function speakWithAzure(text, button = null) {
     };
     
     audio.onended = () => {
+      console.log('Audio ended naturally');
       URL.revokeObjectURL(url);
       currentAudio = null;
       if (button) {
-        button.innerHTML = '<span>🔊</span>';
-        button.onclick = () => handleAudioClick(button, text);
+        resetButton(button, text);
       }
       currentPlayingButton = null;
     };
     
     audio.onerror = () => {
+      console.log('Audio error occurred');
       currentAudio = null;
       if (button) {
-        button.innerHTML = '<span>🔊</span>';
-        button.onclick = () => handleAudioClick(button, text);
+        resetButton(button, text);
       }
       currentPlayingButton = null;
       console.error('AZURE AUDIO playback failed');
@@ -243,37 +237,28 @@ async function speakWithAzure(text, button = null) {
         toast("❌ Azure audio play failed: " + playError.name);
       }
       if (button) {
-        button.innerHTML = '<span>🔊</span>';
-        button.onclick = () => handleAudioClick(button, text);
-        currentPlayingButton = null;
+        resetButton(button, text);
       }
+      currentPlayingButton = null;
     }
     
   } catch (e) {
     console.error('AZURE SPEECH FAILED:', e.message);
     toast("❌ Azure Hindi voice failed: " + e.message);
     if (button) {
-      button.innerHTML = '<span>🔊</span>';
-      button.onclick = () => handleAudioClick(button, text);
-      currentPlayingButton = null;
+      resetButton(button, text);
     }
+    currentPlayingButton = null;
     // NO FALLBACK - Azure only!
   }
 }
 
-function stopAudio() {
-  stopCurrentAudio();
-  
-  // Reset all listen buttons back to play icon
-  document.querySelectorAll('.listen-btn').forEach(btn => {
-    const originalText = btn.getAttribute('data-original-text');
-    if (originalText) {
-      btn.innerHTML = '<span>🔊</span>';
-      btn.onclick = () => speak(originalText);
-    }
-  });
-  
-  toast("🔇 Audio stopped");
+function resetButton(button, text) {
+  button.innerHTML = '<span>🔊</span>';
+  button.onclick = (e) => {
+    e.stopPropagation();
+    handleAudioClick(button, text);
+  };
 }
 
 async function send() {
@@ -337,7 +322,10 @@ let currentAudio = null;
 let currentPlayingButton = null;
 
 function stopCurrentAudio() {
+  console.log('Stopping current audio...');
+  
   if (currentAudio) {
+    console.log('Pausing and resetting audio');
     currentAudio.pause();
     currentAudio.currentTime = 0;
     currentAudio = null;
@@ -345,16 +333,47 @@ function stopCurrentAudio() {
   
   // Reset all listen buttons to play state
   document.querySelectorAll('.listen-btn').forEach(btn => {
-    const originalText = btn.getAttribute('data-original-text');
-    if (originalText) {
-      btn.innerHTML = '<span>🔊</span>';
-      btn.onclick = () => speak(originalText);
-    }
+    btn.innerHTML = '<span>🔊</span>';
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const text = btn.getAttribute('data-original-text');
+      if (text) {
+        handleAudioClick(btn, text);
+      }
+    };
   });
   
   currentPlayingButton = null;
+  console.log('Audio stopped and buttons reset');
 }
 
+function handleAudioClick(button, text) {
+  console.log('Audio button clicked:', text.substring(0, 30) + '...');
+  
+  // If this button is currently playing, stop it
+  if (currentPlayingButton === button) {
+    console.log('Stopping current audio from same button');
+    stopCurrentAudio();
+    return;
+  }
+  
+  // Stop any other playing audio first
+  if (currentAudio || currentPlayingButton) {
+    console.log('Stopping previous audio before starting new one');
+    stopCurrentAudio();
+  }
+  
+  // Set this button as playing
+  currentPlayingButton = button;
+  button.innerHTML = '<span>⏹️</span>';
+  button.onclick = (e) => {
+    e.stopPropagation();
+    stopCurrentAudio();
+  };
+  
+  // Start playing audio
+  speakWithAzure(text, button);
+}
 micBtn.addEventListener("click", async () => {
   webSpeechDictation();
 });
