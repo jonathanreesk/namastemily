@@ -438,13 +438,15 @@ function renderPhrases() {
   
   pack.forEach(p => {
     const b = document.createElement("button");
-    b.textContent = p.hi;
-    b.title = `${p.en} (${p.tr})`;
+    // Use transliteration for display
+    const displayText = p.displayText || p.pronunciation || p.tr || p.hi;
+    b.textContent = displayText;
+    b.title = `${p.englishMeaning || p.en} (${p.pronunciation || p.tr})`;
     b.style.cursor = "pointer";
     b.setAttribute("ontouchstart", ""); // Enable :active on iOS
     b.addEventListener("click", () => {
-      input.value = p.tr;
-      speak(p.hi); // Speak the Hindi phrase when clicked
+      input.value = p.pronunciation || p.tr;
+      speak(p.hindiPhrase || p.hi); // Speak the Hindi phrase when clicked
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
       toast("Phrase added! Try saying it out loud 🗣️");
