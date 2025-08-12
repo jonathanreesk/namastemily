@@ -145,8 +145,10 @@ async function speakWithAzure(text) {
     // Stop any currently playing audio first
     stopCurrentAudio();
     
+    const isHindiPhrase = /[\u0900-\u097F]/.test(text);
     console.log('Attempting Azure TTS for:', text.substring(0, 50) + '...');
-    console.log('Text contains Hindi:', /[\u0900-\u097F]/.test(text));
+    console.log('Text contains Hindi characters:', isHindiPhrase);
+    console.log('Hindi characters found:', text.match(/[\u0900-\u097F]/g) || 'none');
     toast("🔊 Playing audio...");
     
     const resp = await fetch(`/.netlify/functions/speech`, {
@@ -282,12 +284,14 @@ async function speakWithAzure(text) {
       let selectedVoice;
       
       if (isHindiPhrase) {
+        console.log('Looking for Hindi voice for text:', text.match(/[\u0900-\u097F]/g));
         selectedVoice = voices.find(voice => 
           voice.lang.includes('hi') || 
           voice.name.toLowerCase().includes('hindi') ||
           voice.name.toLowerCase().includes('india')
         );
       } else {
+        console.log('Looking for English voice for text:', text.substring(0, 30));
         selectedVoice = voices.find(voice => 
           voice.lang.includes('en-US') || 
           voice.name.toLowerCase().includes('english')
@@ -296,6 +300,9 @@ async function speakWithAzure(text) {
       
       if (selectedVoice) {
         u.voice = selectedVoice;
+        console.log('Selected voice:', selectedVoice.name, selectedVoice.lang);
+      } else {
+        console.log('No suitable voice found, using default');
       }
       
       u.onstart = () => {

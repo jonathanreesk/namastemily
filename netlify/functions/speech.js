@@ -103,20 +103,21 @@ exports.handler = async (event, context) => {
 
     // Check if text contains Hindi characters
     const isHindiPhrase = /[\u0900-\u097F]/.test(text);
-    const processedText = isHindiPhrase ? applyHindiPhonemes(text) : text;
     
-    console.log('Processing text:', {
+    console.log('Speech function - Processing text:', {
       originalText: text,
       isHindiPhrase,
-      processedText: processedText.substring(0, 100) + '...'
+      hindiCharsFound: text.match(/[\u0900-\u097F]/g) || 'none'
     });
+    
+    const processedText = isHindiPhrase ? applyHindiPhonemes(text) : text;
     
     // Use appropriate voice and language based on content
     const rate = slow ? "-10%" : "0%";
     const voice = isHindiPhrase ? "hi-IN-SwaraNeural" : "en-US-AriaNeural";
     const lang = isHindiPhrase ? "hi-IN" : "en-US";
     
-    console.log('Voice selection:', { voice, lang, rate });
+    console.log('Speech function - Voice selection:', { voice, lang, rate, isHindiPhrase });
     
     const ssml = `
 <speak version="1.0" xml:lang="${lang}" xmlns:mstts="https://www.w3.org/2001/mstts">
@@ -127,7 +128,7 @@ exports.handler = async (event, context) => {
   </voice>
 </speak>`.trim();
 
-    console.log('Generated SSML:', ssml);
+    console.log('Speech function - Generated SSML preview:', ssml.substring(0, 200) + '...');
 
     const url = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
     const resp = await fetch(url, {
