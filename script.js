@@ -377,7 +377,7 @@ const phrasesBar = document.getElementById("phrasesBar");
 
 async function loadPhrases() {
   try {
-    const resp = await fetch("/phrases.json");
+    const resp = await fetch('/phrases.json');
     staticPhrases = await resp.json();
     console.log('Static phrases loaded:', Object.keys(staticPhrases));
     phrasePacks = { ...staticPhrases }; // Use static phrases as base
@@ -389,9 +389,6 @@ async function loadPhrases() {
 function renderPhrases() {
   const scene = sceneSel.value;
   const pack = phrasePacks[scene] || [];
-  const isAI = pack !== staticPhrases[scene]; // Check if these are AI phrases
-  console.log('Rendering', pack.length, isAI ? 'AI' : 'static', 'phrases for scene:', scene);
-  
   phrasesBar.innerHTML = "";
   
   if (pack.length === 0) {
@@ -427,18 +424,26 @@ function renderPhrases() {
     });
     phrasesBar.appendChild(b);
   });
-  
-  // Add indicator for AI vs static phrases
-  if (isAI) {
-    const indicator = document.createElement("div");
-    indicator.className = "ai-indicator";
-    indicator.innerHTML = '<span style="color: var(--secondary-600); font-size: 0.875rem; font-weight: 600;">🤖 AI Personalized</span>';
-    phrasesBar.appendChild(indicator);
-  }
 }
 
 sceneSel.addEventListener("change", () => {
-  renderPhrases();
+  // Show static phrases immediately, then load AI phrases
+  const scene = sceneSel.value;
+  
+  // If we have static phrases for this scene, show them immediately
+  if (staticPhrases[scene]) {
+    phrasePacks[scene] = staticPhrases[scene];
+    renderPhrases();
+  }
+  
+  // Load AI phrases in background
+  loadAIPhrases().then(() => {
+    if (phrasePacks[scene] && phrasePacks[scene] !== staticPhrases[scene]) {
+      renderPhrases(); // Update with AI phrases
+    }
+  }).catch(error => {
+    console.log('AI phrases failed for scene change, keeping static phrases');
+  });
   
   // Update greeting based on scene
   if (history.length <= 1) {
@@ -714,6 +719,19 @@ window.addEventListener("load", () => {
     // Load voices immediately and on change
     loadVoices();
     speechSynthesis.onvoiceschanged = loadVoices;
+    
+    // Force voice loading on mobile
+    setTimeout(() => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length === 0) {
+        // Trigger voice loading on mobile
+        const utterance = new SpeechSynthesisUtterance('');
+        speechSynthesis.speak(utterance);
+        speechSynthesis.cancel();
+        // Try loading again after a delay
+        setTimeout(loadVoices, 1000);
+      }
+    }, 100);
   }
   
   GAMIFY.init();
@@ -725,3 +743,8 @@ window.addEventListener("load", () => {
     toast("Welcome to your Hindi learning journey, Emily! 🌟");
   }, 1000);
 });
+
+async function loadAIPhrases() {
+  // Placeholder function for AI phrase loading
+  return Promise.resolve();
+}
