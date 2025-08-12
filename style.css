@@ -282,6 +282,17 @@ header {
   color: var(--primary-700);
 }
 
+/* AI Indicator */
+.ai-indicator {
+  width: 100%;
+  text-align: center;
+  margin-bottom: var(--space-3);
+  padding: var(--space-2);
+  background: var(--secondary-50);
+  border: 1px solid var(--secondary-200);
+  border-radius: var(--radius-md);
+}
+
 /* Chat */
 .chat {
   background: white;

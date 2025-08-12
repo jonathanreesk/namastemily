@@ -362,19 +362,44 @@ function webSpeechDictation() {
     console.log("Speech recognition error:", e);
     toast("Couldn't catch that. Try speaking a bit louder! 🔊");
   };
-    // Only load static phrases initially
+  
+  recog.onend = () => {
+    micBtn.classList.remove('loading');
+    micBtn.innerHTML = '<span>🎤</span><span>Speak</span>';
+  };
+  
+  recog.start();
+}
+
+// Phrase packs
+const phrasesBar = document.getElementById("phrasesBar");
+let phrasePacks = {};
+let staticPhrases = {}; // Cache for static phrases
+
+async function loadPhrases() {
+  try {
+    // Load static phrases immediately for instant display
     await loadStaticPhrases();
-    renderPhrases();
-  } catch (e) {
-    console.warn("Could not load phrases:", e);
+    renderPhrases(); // Show static phrases right away
+    
+    // Load AI phrases in background (don't await)
+    loadAIPhrases().then(() => {
+      // Only re-render if AI phrases were successfully loaded
+      const scene = sceneSel?.value || 'market';
+      if (phrasePacks[scene] && phrasePacks[scene].length > 0) {
+        renderPhrases(); // Update with AI phrases
+      }
+    }).catch(error => {
+      console.log('AI phrases failed, keeping static phrases:', error.message);
+    });
+    
   }
 }
 
 function renderPhrases() {
   const scene = sceneSel.value;
-  const staticPack = phrasePacks[scene] || [];
-  const aiPack = aiPhrasesLoaded[scene] || [];
-  const pack = aiPack.length > 0 ? aiPack : staticPack;
+  const pack = phrasePacks[scene] || [];
+  phrasesBar.innerHTML = "";
   
   if (pack.length === 0) {
     phrasesBar.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No phrases available for this scene yet 📝</p>';
@@ -577,7 +602,6 @@ const MISSIONS = {
     const m = this.pick();
     missionText.textContent = `${m.text} (Scene: ${m.scene})`;
     sceneSel.value = m.scene;
-    renderPhrases();
   },
   
   complete() {
@@ -684,26 +708,24 @@ window.addEventListener("load", () => {
     };
     
     // Load voices immediately and on change
-    phrasesBar.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 20px;">No phrases available for this scene 📝</p>';
+    loadVoices();
+    speechSynthesis.onvoiceschanged = loadVoices;
+    
+    // Force voice loading on mobile
+    setTimeout(() => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length === 0) {
+        // Trigger voice loading on mobile
+        const utterance = new SpeechSynthesisUtterance('');
+        speechSynthesis.speak(utterance);
+        speechSynthesis.cancel();
+        // Try loading again after a delay
+        setTimeout(loadVoices, 1000);
+      }
+    }, 100);
   }
   
-  // Add More Phrases button if AI phrases aren't loaded yet
-  if (aiPack.length === 0 && staticPack.length > 0) {
-    const moreBtn = document.createElement("button");
-    moreBtn.className = "more-phrases-btn";
-    moreBtn.innerHTML = '<span>🤖</span><span>More Phrases</span>';
-    moreBtn.onclick = () => loadMorePhrases(scene);
-    phrasesBar.appendChild(moreBtn);
-  }
-  
-  // Show AI indicator if AI phrases are loaded
-  if (aiPack.length > 0) {
-    const indicator = document.createElement("div");
-    indicator.className = "ai-indicator";
-    indicator.innerHTML = '<span>🤖</span><span>AI Personalized</span>';
-    phrasesBar.appendChild(indicator);
-  }
-  
+  GAMIFY.init();
   MISSIONS.render();
   GAMIFY.checkBadges();
   
