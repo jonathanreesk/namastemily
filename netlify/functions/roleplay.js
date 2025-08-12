@@ -2,6 +2,12 @@ const fs = require('fs');
 const path = require('path');
 
 exports.handler = async (event, context) => {
+  // Debug all environment variables
+  console.log('All environment variables:', Object.keys(process.env));
+  console.log('OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
+  console.log('OPENAI_API_KEY length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
+  console.log('OPENAI_API_KEY starts with sk-:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.startsWith('sk-') : false);
+  
   // Handle CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -25,23 +31,31 @@ exports.handler = async (event, context) => {
     };
   }
 
-  // Debug environment variables
-  console.log('Environment check:', {
-    hasOpenAI: !!process.env.OPENAI_API_KEY,
-    openAIPreview: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 20) + '...' : 'undefined'
-  });
   try {
     const { history = [], scene = "market", level = "beginner" } = JSON.parse(event.body || '{}');
 
-    if (!process.env.OPENAI_API_KEY) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    console.log('API Key check:', {
+      exists: !!apiKey,
+      length: apiKey ? apiKey.length : 0,
+      startsWithSk: apiKey ? apiKey.startsWith('sk-') : false,
+      preview: apiKey ? apiKey.substring(0, 20) + '...' : 'undefined'
+    });
+
+    if (!apiKey || !apiKey.startsWith('sk-')) {
       console.error('Missing OpenAI API key');
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
-          error: "Missing OpenAI API key",
-          debug: "Please set OPENAI_API_KEY in Netlify environment variables",
-          instructions: "Go to Site settings → Environment variables in Netlify dashboard"
+          error: "Invalid or missing OpenAI API key",
+          debug: {
+            hasKey: !!apiKey,
+            keyLength: apiKey ? apiKey.length : 0,
+            startsWithSk: apiKey ? apiKey.startsWith('sk-') : false,
+            allEnvKeys: Object.keys(process.env).filter(key => key.includes('OPENAI') || key.includes('API'))
+          },
+          instructions: "Please check OPENAI_API_KEY in Netlify environment variables"
         })
       };
     }
@@ -86,7 +100,7 @@ exports.handler = async (event, context) => {
     let client;
     try {
       const { OpenAI } = await import('openai');
-      client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      client = new OpenAI({ apiKey: apiKey });
     } catch (importError) {
       console.error('Failed to import OpenAI:', importError);
       return {
