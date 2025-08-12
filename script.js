@@ -356,30 +356,6 @@ function handleAudioClick(button, text) {
     stopCurrentAudio();
   }
   
-  // Set this button as playing
-  currentPlayingButton = button;
-  updateButtonToStop(button, text);
-  
-  // Start playing audio
-  speakWithAzure(text, button);
-}
-micBtn.addEventListener("click", async () => {
-function updateButtonToStop(button, text) {
-  button.innerHTML = '<span>⏹️</span>';
-  button.onclick = (e) => {
-    e.stopPropagation();
-    console.log('Stop button clicked');
-    stopCurrentAudio();
-  };
-}
-
-function updateButtonToPlay(button, text) {
-  button.innerHTML = '<span>🔊</span>';
-  button.onclick = (e) => {
-    e.stopPropagation();
-    handleAudioClick(button, text);
-  };
-}
   webSpeechDictation();
 });
 

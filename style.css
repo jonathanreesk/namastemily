@@ -373,6 +373,12 @@ header {
   margin-bottom: var(--space-2);
 }
 
+.audio-controls {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+}
+
 .msg-content {
   margin: 0;
   font-weight: 500;
