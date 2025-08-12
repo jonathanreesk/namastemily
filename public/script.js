@@ -456,16 +456,16 @@ function renderPhrases() {
     const b = document.createElement("button");
     b.className = "phrase-btn";
     
-    // Display transliteration for readability
-    const displayText = p.tr || p.en || 'Unknown phrase';
-    const tooltip = p.intro || p.en || 'Hindi phrase';
+    // Display English meaning/question for readability
+    const displayText = p.en || p.tr || 'Unknown phrase';
+    const tooltip = p.intro || `Hindi: ${p.hi}` || 'Hindi phrase';
     
     b.textContent = displayText;
     b.title = tooltip;
     
     b.addEventListener("click", () => {
-      // Put transliteration in input for practice
-      input.value = p.tr || p.en;
+      // Put English phrase in input for practice
+      input.value = p.en || p.tr;
       
       // Speak the Hindi phrase
       if (p.hi) {
@@ -474,7 +474,7 @@ function renderPhrases() {
       
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
-      toast("Phrase added! Try saying it out loud 🗣️");
+      toast(`Added: "${p.en}" - Listen to Hindi pronunciation! 🗣️`);
     });
     
     phrasesBar.appendChild(b);
