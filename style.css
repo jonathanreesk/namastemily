@@ -479,12 +479,12 @@ header {
 
 .input-container {
   display: flex;
-  gap: var(--space-3);
-  align-items: flex-end;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
 #input {
-  flex: 1;
+  width: 100%;
   min-height: 80px;
   max-height: 120px;
   padding: var(--space-4) var(--space-5);
@@ -509,9 +509,9 @@ header {
 
 .actions {
   display: flex;
-  gap: var(--space-1);
-  align-items: flex-end;
-  flex-shrink: 0;
+  gap: var(--space-2);
+  justify-content: center;
+  align-items: center;
 }
 
 .btn {
@@ -525,8 +525,8 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 48px;
+  min-height: 48px;
 }
 
 .btn:hover {
@@ -559,12 +559,12 @@ header {
 }
 
 .btn-secondary {
-  min-width: 44px;
+  min-width: 48px;
   padding: var(--space-3);
 }
 
 #sendBtn {
-  min-width: 70px;
+  min-width: 80px;
   font-size: var(--text-base);
   font-weight: 700;
   padding: var(--space-4) var(--space-6);
@@ -887,18 +887,21 @@ footer {
   }
   
   .input-container {
-    gap: var(--space-2);
+    gap: var(--space-3);
   }
   
   #input {
     min-height: 56px;
     padding: var(--space-2) var(--space-3);
     font-size: var(--text-base);
-    flex: 1;
+    width: 100%;
   }
   
   .actions {
-    gap: var(--space-1);
+    flex-direction: row;
+    gap: var(--space-2);
+    width: 100%;
+    justify-content: center;
   }
   
   .chat-actions {
@@ -909,9 +912,10 @@ footer {
   }
   
   .btn {
+    width: 100%;
     justify-content: center;
     padding: var(--space-3);
-    min-width: 40px;
+    min-width: 44px;
     min-height: 48px;
     font-size: var(--text-base);
   }
