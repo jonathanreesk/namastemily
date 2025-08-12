@@ -458,8 +458,11 @@ function renderPhrases() {
     const b = document.createElement("button");
     b.className = "phrase-btn";
     
-    // Display English meaning/question for readability
-    const displayText = p.en || p.tr || 'Unknown phrase';
+    // Display clean English meaning without "This means"
+    let displayText = p.en || p.tr || 'Unknown phrase';
+    // Remove "This means" prefix if it exists
+    displayText = displayText.replace(/^This means\s*/i, '');
+    
     const tooltip = p.intro || `Hindi: ${p.hi}` || 'Hindi phrase';
     
     b.textContent = displayText;
