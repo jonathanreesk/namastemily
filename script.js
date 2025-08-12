@@ -310,6 +310,8 @@ async function sendPhraseToAI(phraseText) {
     sendBtn.disabled = true;
     
     // Add phrase to history for AI context
+  }
+}
 // Mic handling
 let rec;
 let chunks = [];
