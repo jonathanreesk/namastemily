@@ -145,7 +145,7 @@ async function speakWithAzure(text) {
     console.log('Attempting Azure TTS for:', text.substring(0, 50) + '...');
     toast("🔊 Playing audio...");
     
-    const resp = await fetch(`${API}/api/speech`, {
+    const resp = await fetch(`/.netlify/functions/speech`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, slow: true })
@@ -352,7 +352,7 @@ async function send() {
     
   } catch (e) {
     console.error('Send error:', e);
-    addMsg("assistant", "Sorry, I'm having trouble connecting right now. Please check that your API key is set up correctly and try again. 🔧");
+    addMsg("assistant", "Sorry, I'm having trouble connecting to the AI service right now. The speech features should still work with your browser's built-in voice. 🔧");
   } finally {
     sendBtn.classList.remove('loading');
     sendBtn.disabled = false;
