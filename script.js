@@ -145,12 +145,17 @@ async function speakWithAzure(text) {
     // Stop any currently playing audio first
     stopCurrentAudio();
     
+    // Check if we're on mobile and need user interaction
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isMobileChrome = isMobile && /Chrome/i.test(navigator.userAgent);
+    
     const hindiChars = text.match(/[\u0900-\u097F]/g);
     const isHindiPhrase = !!hindiChars;
     console.log('Attempting Azure TTS for:', text.substring(0, 50) + '...');
     console.log('Text contains Hindi characters:', isHindiPhrase);
     console.log('Hindi characters found:', hindiChars || 'none');
     console.log('Hindi character count:', hindiChars ? hindiChars.length : 0);
+    console.log('Mobile Chrome detected:', isMobileChrome);
     toast("🔊 Playing audio...");
     
     const resp = await fetch(`/api/speech`, {
@@ -183,9 +188,29 @@ async function speakWithAzure(text) {
     // Store reference to current audio for stopping
     currentAudio = audio;
     
-    // Mobile-specific audio handling
-    audio.preload = 'auto';
-    audio.crossOrigin = 'anonymous';
+    // Enhanced mobile audio handling
+    if (isMobile) {
+      audio.preload = 'metadata'; // Use metadata instead of auto for mobile
+      audio.playsInline = true; // Prevent fullscreen on iOS
+      audio.muted = false;
+      audio.volume = 1.0;
+      
+      // For mobile Chrome, we need to handle autoplay restrictions
+      if (isMobileChrome) {
+        // Try to enable audio context on user interaction
+        try {
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioContext.state === 'suspended') {
+            console.log('Audio context suspended, attempting to resume...');
+            await audioContext.resume();
+          }
+        } catch (contextError) {
+          console.warn('Audio context handling failed:', contextError);
+        }
+      }
+    } else {
+      audio.preload = 'auto';
+    }
     
     audio.onplay = () => {
       toast("🔊 Playing Hindi audio!");
@@ -222,34 +247,86 @@ async function speakWithAzure(text) {
       throw new Error("Audio playback failed");
     };
     
-    // For mobile Safari, we need to handle audio playback differently
+    // Enhanced mobile playback handling
     const playAudio = async () => {
       try {
         // Ensure no other audio is playing
         stopCurrentAudio();
         currentAudio = audio;
+        
+        // Add a small delay for mobile processing
+        if (isMobile) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
         await audio.play();
       } catch (playError) {
-        console.warn('Direct audio play failed, trying user interaction approach:', playError);
+        console.warn('Direct audio play failed:', playError.name, playError.message);
         // On mobile, audio might need user interaction
-        if (playError.name === 'NotAllowedError') {
-          toast("🔊 Tap to play audio (mobile requirement)");
+        if (playError.name === 'NotAllowedError' || playError.name === 'NotSupportedError') {
+          toast("🔊 Tap to play audio (mobile browser requirement)");
           // Create a temporary button for user interaction
           const playBtn = document.createElement('button');
-          playBtn.textContent = '🔊 Play Audio';
-          playBtn.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;padding:20px;font-size:18px;background:#007bff;color:white;border:none;border-radius:10px;';
+          playBtn.innerHTML = '🔊 Play Hindi Audio';
+          playBtn.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            padding: 20px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            background: #14b8a6;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            cursor: pointer;
+            min-width: 200px;
+            text-align: center;
+          `;
           document.body.appendChild(playBtn);
+          
+          // Add touch feedback
+          playBtn.addEventListener('touchstart', () => {
+            playBtn.style.transform = 'translate(-50%, -50%) scale(0.95)';
+          });
+          
+          playBtn.addEventListener('touchend', () => {
+            playBtn.style.transform = 'translate(-50%, -50%) scale(1)';
+          });
           
           playBtn.onclick = async () => {
             try {
+              // Enable audio context first
+              try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioContext.state === 'suspended') {
+                  await audioContext.resume();
+                }
+              } catch (contextError) {
+                console.warn('Audio context resume failed:', contextError);
+              }
+              
               await audio.play();
               document.body.removeChild(playBtn);
+              toast("🔊 Playing Hindi audio!");
             } catch (e) {
               console.error('Manual play also failed:', e);
               document.body.removeChild(playBtn);
-              throw e;
+              toast("❌ Audio playback not supported on this device");
             }
           };
+          
+          // Auto-remove button after 10 seconds
+          setTimeout(() => {
+            if (document.body.contains(playBtn)) {
+              document.body.removeChild(playBtn);
+              toast("Audio play timeout - try again");
+            }
+          }, 10000);
+          
         } else {
           throw playError;
         }
@@ -755,6 +832,32 @@ function confetti() {
 
 // Initialize everything
 window.addEventListener("load", () => {
+  // Initialize audio context on first user interaction for mobile
+  const initAudioContext = async () => {
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === 'suspended') {
+        console.log('Initializing audio context...');
+        await audioContext.resume();
+        console.log('Audio context initialized successfully');
+      }
+    } catch (e) {
+      console.warn('Audio context initialization failed:', e);
+    }
+  };
+  
+  // Add one-time click listener to initialize audio on mobile
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (isMobile) {
+    const initAudio = () => {
+      initAudioContext();
+      document.removeEventListener('touchstart', initAudio);
+      document.removeEventListener('click', initAudio);
+    };
+    document.addEventListener('touchstart', initAudio, { once: true });
+    document.addEventListener('click', initAudio, { once: true });
+  }
+  
   // Load voices for better Hindi TTS
   if ('speechSynthesis' in window) {
     // Function to load and display available voices
