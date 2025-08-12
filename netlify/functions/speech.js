@@ -1,6 +1,5 @@
 exports.handler = async (event, context) => {
   console.log('Speech function called with method:', event.httpMethod);
-  console.log('Speech function called');
   console.log('Environment check:', {
     hasKey: !!process.env.AZURE_SPEECH_KEY,
     hasRegion: !!process.env.AZURE_SPEECH_REGION,
@@ -58,6 +57,9 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // Import fetch for Node.js environment
+    const fetch = require('node-fetch');
+
     // Apply Hindi phoneme corrections for proper pronunciation
     function applyHindiPhonemes(s) {
       // Force correct pronunciation for common confusing words
@@ -96,16 +98,18 @@ exports.handler = async (event, context) => {
         .replace(/चलेंगे/g, '<phoneme alphabet="ipa" ph="t͡ʃəleːŋɡe">चलेंगे</phoneme>');
     }
 
-    // Apply Hindi phoneme corrections to any Devanagari text
-    const processedText = applyHindiPhonemes(text);
+    // Check if text contains Hindi characters
+    const isHindiPhrase = /[\u0900-\u097F]/.test(text);
+    const processedText = isHindiPhrase ? applyHindiPhonemes(text) : text;
     
-    // Use natural Delhi Hindi voice for everything with slower pace for learning
+    // Use appropriate voice and language based on content
     const rate = slow ? "-10%" : "0%";
+    const voice = isHindiPhrase ? "hi-IN-SwaraNeural" : "en-US-JennyNeural";
+    const lang = isHindiPhrase ? "hi-IN" : "en-US";
     
-    // Use hi-IN-SwaraNeural for natural Delhi Hindi intonation on all content
     const ssml = `
-<speak version="1.0" xml:lang="hi-IN" xmlns:mstts="https://www.w3.org/2001/mstts">
-  <voice name="hi-IN-SwaraNeural">
+<speak version="1.0" xml:lang="${lang}" xmlns:mstts="https://www.w3.org/2001/mstts">
+  <voice name="${voice}">
     <prosody rate="${rate}">
       ${processedText}
     </prosody>

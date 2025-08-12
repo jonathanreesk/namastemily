@@ -173,6 +173,10 @@ async function speakWithAzure(text) {
     // Store reference to current audio for stopping
     currentAudio = audio;
     
+    // Mobile-specific audio handling
+    audio.preload = 'auto';
+    audio.crossOrigin = 'anonymous';
+    
     audio.onplay = () => {
       toast("🔊 Playing Hindi audio!");
       // Update all listen buttons to show stop icon while playing
@@ -208,7 +212,38 @@ async function speakWithAzure(text) {
       throw new Error("Audio playback failed");
     };
     
-    await audio.play();
+    // For mobile Safari, we need to handle audio playback differently
+    const playAudio = async () => {
+      try {
+        await audio.play();
+      } catch (playError) {
+        console.warn('Direct audio play failed, trying user interaction approach:', playError);
+        // On mobile, audio might need user interaction
+        if (playError.name === 'NotAllowedError') {
+          toast("🔊 Tap to play audio (mobile requirement)");
+          // Create a temporary button for user interaction
+          const playBtn = document.createElement('button');
+          playBtn.textContent = '🔊 Play Audio';
+          playBtn.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;padding:20px;font-size:18px;background:#007bff;color:white;border:none;border-radius:10px;';
+          document.body.appendChild(playBtn);
+          
+          playBtn.onclick = async () => {
+            try {
+              await audio.play();
+              document.body.removeChild(playBtn);
+            } catch (e) {
+              console.error('Manual play also failed:', e);
+              document.body.removeChild(playBtn);
+              throw e;
+            }
+          };
+        } else {
+          throw playError;
+        }
+      }
+    };
+    
+    await playAudio();
     
   } catch (e) {
     console.error('Speech API failed, falling back to browser TTS:', e);
@@ -219,7 +254,9 @@ async function speakWithAzure(text) {
       window.speechSynthesis.cancel();
       
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = "hi-IN";
+      // Use appropriate language based on content
+      const isHindiPhrase = /[\u0900-\u097F]/.test(text);
+      u.lang = isHindiPhrase ? "hi-IN" : "en-US";
       u.rate = 0.6;
       u.pitch = 1.0;
       u.volume = 0.9;
@@ -231,18 +268,24 @@ async function speakWithAzure(text) {
         paused: false
       };
       
-      const resp = await fetch(`/.netlify/functions/missions`, {
-      }
-      )
       const voices = window.speechSynthesis.getVoices();
-      const hindiVoice = voices.find(voice => 
-        voice.lang.includes('hi') || 
-        voice.name.toLowerCase().includes('hindi') ||
-        voice.name.toLowerCase().includes('india')
-      );
+      let selectedVoice;
       
-      if (hindiVoice) {
-        u.voice = hindiVoice;
+      if (isHindiPhrase) {
+        selectedVoice = voices.find(voice => 
+          voice.lang.includes('hi') || 
+          voice.name.toLowerCase().includes('hindi') ||
+          voice.name.toLowerCase().includes('india')
+        );
+      } else {
+        selectedVoice = voices.find(voice => 
+          voice.lang.includes('en-US') || 
+          voice.name.toLowerCase().includes('english')
+        );
+      }
+      
+      if (selectedVoice) {
+        u.voice = selectedVoice;
       }
       
       u.onstart = () => {
