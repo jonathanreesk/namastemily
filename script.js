@@ -575,8 +575,10 @@ function renderPhrases() {
     b.title = tooltip;
     
     b.addEventListener("click", () => {
-      // Put transliteration in input for practice
-      input.value = p.tr || p.en;
+      // Add the phrase to chat and send it
+      const phraseText = `I want to practice: "${p.en || p.tr}" (${p.hi})`;
+      input.value = phraseText;
+      send(); // Actually send it to the chat
       
       // Speak the Hindi phrase
       if (p.hi) {
@@ -585,7 +587,7 @@ function renderPhrases() {
       
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
-      toast("Phrase added! Try saying it out loud 🗣️");
+      toast("Phrase sent to Asha Aunty! 🗣️");
     });
     
     phrasesBar.appendChild(b);
