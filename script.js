@@ -340,6 +340,14 @@ function stopCurrentAudio() {
   console.log('Audio stopped and buttons reset');
 }
 
+function updateButtonToPlay(button, text) {
+  button.innerHTML = '<span>🔊</span>';
+  button.onclick = (e) => {
+    e.stopPropagation();
+    handleAudioClick(button, text);
+  };
+}
+
 function handleAudioClick(button, text) {
   console.log('Audio button clicked:', text.substring(0, 30) + '...');
   
@@ -357,7 +365,7 @@ function handleAudioClick(button, text) {
   }
   
   webSpeechDictation();
-});
+}
 
 function webSpeechDictation() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -890,6 +898,7 @@ window.addEventListener("load", () => {
   GAMIFY.init();
   MISSIONS.render();
   GAMIFY.checkBadges();
+  loadPhrases();
   
   // Welcome message
   setTimeout(() => {
