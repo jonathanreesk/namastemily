@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
@@ -16,6 +17,18 @@ console.log('Environment check:', {
   hasAzureRegion: !!AZURE_SPEECH_REGION,
   openAIPreview: OPENAI_API_KEY ? OPENAI_API_KEY.substring(0, 20) + '...' : 'undefined'
 });
+
+// Apply Hindi phoneme corrections for proper pronunciation
+function applyHindiPhonemes(s) {
+  return s
+    .replace(/मैं/g, '<phoneme alphabet="ipa" ph="mɛ̃">मैं</phoneme>')
+    .replace(/में/g, '<phoneme alphabet="ipa" ph="meː̃">में</phoneme>')
+    .replace(/नहीं/g, '<phoneme alphabet="ipa" ph="nəɦĩː">नहीं</phoneme>')
+    .replace(/कृपया/g, '<phoneme alphabet="ipa" ph="kɾɪpjaː">कृपया</phoneme>')
+    .replace(/धन्यवाद/g, '<phoneme alphabet="ipa" ph="d̪ʱənjəʋaːd̪">धन्यवाद</phoneme>')
+    .replace(/नमस्ते/g, '<phoneme alphabet="ipa" ph="nəməsˈteː">नमस्ते</phoneme>')
+    .replace(/चाहिए/g, '<phoneme alphabet="ipa" ph="t͡ʃaːɦije">चाहिए</phoneme>');
+}
 
 const server = http.createServer(async (req, res) => {
   // Handle CORS
@@ -51,8 +64,8 @@ const server = http.createServer(async (req, res) => {
         let persona, scenes;
         try {
           const __dirname = path.dirname(new URL(import.meta.url).pathname);
-          persona = fs.readFileSync(path.join(__dirname, '..', 'server', 'persona.txt'), 'utf8');
-          scenes = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'server', 'scenes.json'), 'utf8'));
+          persona = fs.readFileSync(path.join(__dirname, 'server', 'persona.txt'), 'utf8');
+          scenes = JSON.parse(fs.readFileSync(path.join(__dirname, 'server', 'scenes.json'), 'utf8'));
         } catch (fileError) {
           persona = `You are Aasha Aunty, a warm, encouraging Hindi teacher who speaks primarily in clear American English. Always speak in English first, then teach Hindi phrases.`;
           scenes = {
@@ -207,17 +220,6 @@ Format as JSON array:
         }
 
         try {
-          // Apply Hindi phoneme corrections for proper pronunciation
-          function applyHindiPhonemes(s) {
-            return s
-              .replace(/मैं/g, '<phoneme alphabet="ipa" ph="mɛ̃">मैं</phoneme>')
-              .replace(/में/g, '<phoneme alphabet="ipa" ph="meː̃">में</phoneme>')
-              .replace(/नहीं/g, '<phoneme alphabet="ipa" ph="nəɦĩː">नहीं</phoneme>')
-              .replace(/कृपया/g, '<phoneme alphabet="ipa" ph="kɾɪpjaː">कृपया</phoneme>')
-              .replace(/धन्यवाद/g, '<phoneme alphabet="ipa" ph="d̪ʱənjəʋaːd̪">धन्यवाद</phoneme>')
-              .replace(/नमस्ते/g, '<phoneme alphabet="ipa" ph="nəməsˈteː">नमस्ते</phoneme>')
-              .replace(/चाहिए/g, '<phoneme alphabet="ipa" ph="t͡ʃaːɦije">चाहिए</phoneme>');
-          }
 
           const isHindiPhrase = /[\u0900-\u097F]/.test(text);
           const processedText = isHindiPhrase ? applyHindiPhonemes(text) : text;
