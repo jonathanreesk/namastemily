@@ -622,22 +622,20 @@ function renderPhrases() {
       addMsg("user", phraseText);
       input.value = "";
       addMsg("user", phraseText);
-      input.value = "";
+      // Put the English phrase directly in input and send it
+      input.value = p.en || p.tr || displayText;
+      send();
       
-      // Send to AI for response
-      sendPhraseToAI(phraseText);
-      
-      // Send to AI for response
-      sendPhraseToAI(phraseText);
-      
-      // Speak the Hindi phrase
-      if (p.hi) {
-        speak(p.hi);
-      }
+      // Also speak the Hindi phrase for pronunciation
+      setTimeout(() => {
+        if (p.hi) {
+          speak(p.hi);
+        }
+      }, 1000);
       
       GAMIFY.awardXP(2);
       GAMIFY.tapPhrase();
-      toast("Phrase added to chat! 🗣️");
+      toast(`Sent: "${p.en}" - Listen for Hindi pronunciation! 🗣️`);
     });
     
     phrasesBar.appendChild(b);
