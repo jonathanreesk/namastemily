@@ -269,49 +269,6 @@ async function send() {
   addMsg("user", text);
   input.value = "";
 
-  try {
-    const resp = await fetch(`/.netlify/functions/roleplay`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        history,
-        scene: sceneSel.value,
-        level: levelSel.value
-      })
-    });
-    
-    if (!resp.ok) {
-      throw new Error(`HTTP ${resp.status}`);
-    }
-    
-    const data = await resp.json();
-    addMsg("assistant", data.reply);
-    
-    // Auto-speak the response
-    setTimeout(() => speak(data.reply), 500);
-    
-    // Award XP and update gamification
-    GAMIFY.awardXP(5);
-    GAMIFY.touchScene(sceneSel.value);
-    
-  } catch (e) {
-    console.error('Send error:', e);
-    addMsg("assistant", "I need an OpenAI API key to chat with you! 🔧\n\nTo fix this:\n1. Go to your Netlify site dashboard\n2. Click 'Site settings' → 'Environment variables'\n3. Add OPENAI_API_KEY with your OpenAI API key\n4. Redeploy the site\n\nThe speech features still work with your browser's voice! Try clicking the 🔊 buttons.");
-  } finally {
-    sendBtn.classList.remove('loading');
-    sendBtn.disabled = false;
-  }
-}
-
-async function sendPhraseToAI(phraseText) {
-  try {
-    // Add loading state
-    sendBtn.classList.add('loading');
-    sendBtn.disabled = true;
-    
-    // Add phrase to history for AI context
-  }
-}
 // Mic handling
 let rec;
 let chunks = [];
