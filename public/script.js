@@ -406,7 +406,9 @@ function webSpeechDictation() {
 
 // ===== PHRASES SYSTEM - STATIC ONLY =====
 const phrasesBar = document.getElementById("phrasesBar");
+const aiPhrasesBar = document.getElementById("aiPhrasesBar");
 let phrasePacks = {};
+let aiPhrasesLoaded = {};
 
 // Load phrases from phrases.json - NO AI
 async function loadPhrases() {
@@ -481,9 +483,118 @@ function renderPhrases() {
   });
 }
 
+// AI Phrases System
+async function loadAIPhrases(scene) {
+  if (aiPhrasesLoaded[scene]) {
+    console.log(`AI phrases already loaded for ${scene}`);
+    renderAIPhrases();
+    return;
+  }
+  
+  try {
+    // Show loading state
+    aiPhrasesBar.innerHTML = '<div class="ai-loading">🤖 Loading personalized phrases...</div>';
+    
+    const resp = await fetch(`/api/missions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        type: 'suggestions', 
+        userProgress: {
+          scene: scene,
+          level: levelSel.value,
+          xp: GAMIFY.state?.xp || 0
+        }
+      })
+    });
+    
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}`);
+    }
+    
+    const data = await resp.json();
+    console.log('AI phrases received:', data);
+    
+    // Convert AI response to our format
+    if (Array.isArray(data)) {
+      aiPhrasesLoaded[scene] = data.map(p => ({
+        hi: p.hindiPhrase,
+        tr: p.pronunciation || p.displayText,
+        en: p.englishMeaning,
+        intro: p.englishIntro
+      }));
+    } else {
+      aiPhrasesLoaded[scene] = [];
+    }
+    
+    renderAIPhrases();
+    toast("✨ AI phrases loaded!");
+    
+  } catch (e) {
+    console.error('Load AI phrases error:', e);
+    aiPhrasesBar.innerHTML = '<div class="ai-error">❌ Could not load AI phrases. API key may be missing.</div>';
+  }
+}
+
+function renderAIPhrases() {
+  const scene = sceneSel.value;
+  const aiPack = aiPhrasesLoaded[scene] || [];
+  
+  console.log(`Rendering ${aiPack.length} AI phrases for scene: ${scene}`);
+  
+  if (aiPack.length === 0) {
+    aiPhrasesBar.innerHTML = `
+      <div class="ai-section-header">
+        <h3>🤖 AI Personalized Phrases</h3>
+        <button class="load-ai-btn" onclick="loadAIPhrases('${scene}')">
+          <span>🤖</span>
+          <span>Load AI Phrases</span>
+        </button>
+      </div>
+    `;
+    return;
+  }
+  
+  let html = `
+    <div class="ai-section-header">
+      <h3>🤖 AI Personalized Phrases</h3>
+      <div class="ai-indicator">
+        <span>✨</span>
+        <span>Personalized for you</span>
+      </div>
+    </div>
+    <div class="ai-phrases-grid">
+  `;
+  
+  aiPack.forEach(p => {
+    const displayText = p.intro || p.en || 'AI phrase';
+    const tooltip = `Hindi: ${p.hi}`;
+    
+    html += `
+      <button class="ai-phrase-btn" title="${tooltip}" onclick="useAIPhrase('${p.en?.replace(/'/g, "\\'")}', '${p.hi?.replace(/'/g, "\\'")}')">
+        ${displayText}
+      </button>
+    `;
+  });
+  
+  html += '</div>';
+  aiPhrasesBar.innerHTML = html;
+}
+
+function useAIPhrase(english, hindi) {
+  input.value = english;
+  if (hindi) {
+    speak(hindi);
+  }
+  GAMIFY.awardXP(3);
+  GAMIFY.tapPhrase();
+  toast(`AI phrase added: "${english}" 🤖`);
+}
+
 sceneSel.addEventListener("change", () => {
   console.log('Scene changed to:', sceneSel.value);
   renderPhrases();
+  renderAIPhrases(); // Also update AI phrases section
   
   // Update greeting based on scene
   if (history.length <= 1) {
@@ -763,6 +874,7 @@ window.addEventListener("load", () => {
   MISSIONS.render();
   GAMIFY.checkBadges();
   loadPhrases(); // Load static phrases only
+  renderAIPhrases(); // Initialize AI phrases section
   
   // Welcome message
   setTimeout(() => {
