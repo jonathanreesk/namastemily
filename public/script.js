@@ -74,6 +74,8 @@ const sendBtn = document.getElementById("sendBtn");
 const micBtn = document.getElementById("micBtn");
 const sceneSel = document.getElementById("scene");
 const levelSel = document.getElementById("level");
+const summarizeBtn = document.getElementById("summarizeBtn");
+const testBtn = document.getElementById("testBtn");
 
 // Audio management - GLOBAL VARIABLES
 let currentAudio = null;
@@ -410,6 +412,49 @@ Make it challenging but encouraging. We've had ${conversationCount} messages in 
 // Mic handling
 micBtn.addEventListener("click", async () => {
   webSpeechDictation();
+});
+
+// Lesson Summary Button
+summarizeBtn.addEventListener("click", async () => {
+  const scene = sceneSel.value;
+  const level = levelSel.value;
+  const xp = GAMIFY.state?.xp || 0;
+  const phrasesUsed = GAMIFY.state?.phrasesTapped || 0;
+  
+  const summaryPrompt = `Please summarize today's Hindi lesson for the ${scene} scene at ${level} level. I've earned ${xp} XP and practiced ${phrasesUsed} phrases. Give me:
+
+1. Key phrases I learned today
+2. Grammar points covered
+3. Cultural tips for this situation
+4. What I should practice next
+5. Confidence boosters - what I'm doing well!
+
+Make it encouraging and specific to my progress in the ${scene} scenario.`;
+
+  // Add the summary request to input and send
+  input.value = summaryPrompt;
+  await send();
+});
+
+// Test Me Button  
+testBtn.addEventListener("click", async () => {
+  const scene = sceneSel.value;
+  const level = levelSel.value;
+  const conversationCount = history.length;
+  
+  const testPrompt = `Test me on everything I've learned! Create a fun quiz based on our conversation and the ${scene} scene at ${level} level. 
+
+Please give me:
+1. 3-5 Hindi phrases to translate to English
+2. 2-3 English situations where I need to respond in Hindi
+3. 1-2 cultural etiquette questions
+4. A role-play scenario to practice
+
+Make it challenging but encouraging. We've had ${conversationCount} messages in our conversation, so base the test on what we've actually covered. Give me one question at a time and wait for my answer before the next one!`;
+
+  // Add the test request to input and send
+  input.value = testPrompt;
+  await send();
 });
 
 function webSpeechDictation() {
