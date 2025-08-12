@@ -812,7 +812,7 @@ const MISSIONS = {
 missionDoneBtn?.addEventListener("click", () => MISSIONS.complete());
 
 // Review Lesson Button
-document.getElementById("reviewBtn").addEventListener("click", async () => {
+document.getElementById("summarizeBtn").addEventListener("click", async () => {
   const scene = sceneSel.value;
   const level = levelSel.value;
   const xp = GAMIFY.state?.xp || 0;
@@ -828,38 +828,10 @@ document.getElementById("reviewBtn").addEventListener("click", async () => {
 
 Make it encouraging and specific to my progress in the ${scene} scenario.`;
 
-  // Add to chat and send
-  addMsg("user", reviewPrompt);
+  // Just put in input and send normally
   input.value = "";
-  
-  // Send to AI
-  try {
-    const resp = await fetch(`/api/roleplay`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        history,
-        scene: sceneSel.value,
-        level: levelSel.value
-      })
-    });
-    
-    if (!resp.ok) {
-      throw new Error(`HTTP ${resp.status}`);
-    }
-    
-    const data = await resp.json();
-    addMsg("assistant", data.reply);
-    
-    // Auto-speak the response
-    setTimeout(() => speak(data.reply), 500);
-    
-    GAMIFY.awardXP(10);
-    
-  } catch (e) {
-    console.error('Review error:', e);
-    addMsg("assistant", "Sorry, I'm having trouble connecting right now. Please check that your API key is set up correctly and try again. 🔧");
-  }
+  input.value = reviewPrompt;
+  send();
 });
 
 // Test Me Button  
@@ -878,38 +850,10 @@ Please give me:
 
 Make it challenging but encouraging. We've had ${conversationCount} messages in our conversation, so base the test on what we've actually covered. Give me one question at a time and wait for my answer before the next one!`;
 
-  // Add to chat and send
-  addMsg("user", testPrompt);
+  // Just put in input and send normally
   input.value = "";
-  
-  // Send to AI
-  try {
-    const resp = await fetch(`/api/roleplay`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        history,
-        scene: sceneSel.value,
-        level: levelSel.value
-      })
-    });
-    
-    if (!resp.ok) {
-      throw new Error(`HTTP ${resp.status}`);
-    }
-    
-    const data = await resp.json();
-    addMsg("assistant", data.reply);
-    
-    // Auto-speak the response
-    setTimeout(() => speak(data.reply), 500);
-    
-    GAMIFY.awardXP(10);
-    
-  } catch (e) {
-    console.error('Test error:', e);
-    addMsg("assistant", "Sorry, I'm having trouble connecting right now. Please check that your API key is set up correctly and try again. 🔧");
-  }
+  input.value = testPrompt;
+  send();
 });
 
 // Toast notifications
