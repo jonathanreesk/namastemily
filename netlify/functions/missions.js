@@ -84,24 +84,32 @@ Format as JSON:
   "culturalTip": "In Indian markets, gentle bargaining is expected and shows engagement"
 }`;
     } else if (type === 'suggestions') {
-      prompt = `Generate 4-6 realistic Hindi phrase suggestions for Emily based on her current scene and progress.
+      prompt = `Generate 6-8 of the MOST COMMON and practical Hindi phrases that Emily would actually use daily in this scene. Focus on phrases locals use constantly.
 
-Context: American learning Hindi for daily life in India. Progress: ${JSON.stringify(userProgress)}
+Context: American family (Emily, husband Jonathan, daughter Sophia) living in India for 6 months. They need the most essential, frequently-used phrases for real daily situations.
+
+Current scene: ${userProgress.scene || 'market'}
+User progress: ${JSON.stringify(userProgress)}
 
 Requirements:
-- Phrases should be immediately useful in India
-- Include both English explanation and Hindi phrase
-- Make them culturally appropriate
-- Focus on practical communication
-- Include pronunciation guide
+- Choose the TOP phrases locals actually say every day in this situation
+- Include phrases for different politeness levels (formal/informal)
+- Add phrases for common problems/situations that arise
+- Include both asking AND responding phrases
+- Make pronunciation guides very clear for Americans
+- Add cultural context when the phrase has special meaning
+- Focus on phrases that will make Emily sound natural, not textbook
 
 Format as JSON array:
 [
   {
-    "englishIntro": "When you want to ask if vegetables are fresh at the market",
-    "hindiPhrase": "यह ताज़ा है?",
+    "englishIntro": "The most common way to ask if vegetables are fresh - vendors expect this",
+    "hindiPhrase": "यह ताज़ा है?", 
     "englishMeaning": "Is this fresh?",
     "pronunciation": "Yeh taaza hai?",
+    "displayText": "Yeh taaza hai?",
+    "culturalNote": "Vendors appreciate when you check freshness - shows you know quality",
+    "frequency": "very_high"
     "culturalNote": "Vendors appreciate when you check freshness - shows you know quality"
   }
 ]`;
