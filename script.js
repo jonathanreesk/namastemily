@@ -457,7 +457,7 @@ const defaultPhrases = {
 
 let aiPhrasesLoaded = {};
 
-async function loadStaticPhrases() {
+async function loadPhrases() {
   try {
     console.log('Loading static phrases from phrases.json');
     const resp = await fetch("/phrases.json");
@@ -485,75 +485,12 @@ async function loadStaticPhrases() {
   console.log('Final phrase packs:', Object.keys(phrasePacks));
 }
 
-async function loadMorePhrases(scene) {
-  if (aiPhrasesLoaded[scene]) {
-    console.log(`AI phrases already loaded for ${scene}`);
-    renderPhrases();
-    return;
-  }
-  
-  try {
-    toast("🤖 Loading personalized phrases...");
-    
-    const resp = await fetch(`/.netlify/functions/missions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        type: 'suggestions', 
-        userProgress: {
-          scene: scene,
-          level: levelSel.value,
-          xp: GAMIFY.state?.xp || 0
-        }
-      })
-    });
-    
-    if (!resp.ok) {
-      throw new Error(`HTTP ${resp.status}`);
-    }
-    
-    const data = await resp.json();
-    console.log('AI phrases received:', data);
-    
-    // Convert AI response to our format
-    if (Array.isArray(data)) {
-      aiPhrasesLoaded[scene] = data.map(p => ({
-        hi: p.hindiPhrase,
-        tr: p.pronunciation || p.displayText,
-        en: p.englishMeaning,
-        intro: p.englishIntro
-      }));
-    } else {
-      aiPhrasesLoaded[scene] = [];
-    }
-    
-    renderPhrases();
-    toast("✨ Personalized phrases loaded!");
-    
-  } catch (e) {
-    console.error('Load phrases error:', e);
-    toast("❌ Could not load AI phrases. Using static phrases.");
-  }
-}
-
-async function loadPhrases() {
-  console.log('Loading phrases...');
-  await loadStaticPhrases();
-  renderPhrases();
-}
 
 function renderPhrases() {
   const scene = sceneSel.value;
-  const staticPack = phrasePacks[scene] || [];
-  const aiPack = aiPhrasesLoaded[scene] || [];
+  const pack = phrasePacks[scene] || [];
   
-  console.log(`Rendering phrases for ${scene}:`, {
-    staticCount: staticPack.length,
-    aiCount: aiPack.length
-  });
-  
-  // Use AI phrases if available, otherwise static
-  const pack = aiPack.length > 0 ? aiPack : staticPack;
+  console.log(`Rendering ${pack.length} phrases for scene: ${scene}`);
   
   phrasesBar.innerHTML = "";
   
@@ -595,29 +532,6 @@ function renderPhrases() {
     
     phrasesBar.appendChild(b);
   });
-  
-  // Add "More Phrases" button if AI phrases aren't loaded yet
-  if (aiPack.length === 0 && staticPack.length > 0) {
-    const moreBtn = document.createElement("button");
-    moreBtn.className = "more-phrases-btn";
-    moreBtn.innerHTML = '<span>🤖</span><span>More Phrases</span>';
-    moreBtn.onclick = () => {
-      moreBtn.innerHTML = '<span>⏳</span><span>Loading AI...</span>';
-      moreBtn.disabled = true;
-      loadMorePhrases(scene).finally(() => {
-        moreBtn.disabled = false;
-      });
-    };
-    phrasesBar.appendChild(moreBtn);
-  }
-  
-  // Show AI indicator if AI phrases are loaded
-  if (aiPack.length > 0) {
-    const indicator = document.createElement("div");
-    indicator.className = "ai-indicator";
-    indicator.innerHTML = '<span>🤖</span><span>AI Personalized</span>';
-    phrasesBar.appendChild(indicator);
-  }
 }
 
 sceneSel.addEventListener("change", () => {
