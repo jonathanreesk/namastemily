@@ -796,14 +796,14 @@ const MISSIONS = {
 
 missionDoneBtn?.addEventListener("click", () => MISSIONS.complete());
 
-// Lesson Summary Button
-summarizeBtn.addEventListener("click", async () => {
+// Review Lesson Button
+reviewBtn.addEventListener("click", async () => {
   const scene = sceneSel.value;
   const level = levelSel.value;
   const xp = GAMIFY.state?.xp || 0;
   const phrasesUsed = GAMIFY.state?.phrasesTapped || 0;
   
-  const summaryPrompt = `Please summarize today's Hindi lesson for the ${scene} scene at ${level} level. I've earned ${xp} XP and practiced ${phrasesUsed} phrases. Give me:
+  const reviewPrompt = `Please review today's Hindi lesson for the ${scene} scene at ${level} level. I've earned ${xp} XP and practiced ${phrasesUsed} phrases. Give me:
 
 1. Key phrases I learned today
 2. Grammar points covered
@@ -813,7 +813,7 @@ summarizeBtn.addEventListener("click", async () => {
 
 Make it encouraging and specific to my progress in the ${scene} scenario.`;
 
-  input.value = summaryPrompt;
+  input.value = reviewPrompt;
   send();
 });
 
