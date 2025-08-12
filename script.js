@@ -811,51 +811,6 @@ const MISSIONS = {
 
 missionDoneBtn?.addEventListener("click", () => MISSIONS.complete());
 
-// Review Lesson Button
-document.getElementById("summarizeBtn").addEventListener("click", async () => {
-  const scene = sceneSel.value;
-  const level = levelSel.value;
-  const xp = GAMIFY.state?.xp || 0;
-  const phrasesUsed = GAMIFY.state?.phrasesTapped || 0;
-  
-  const reviewPrompt = `Please review today's Hindi lesson for the ${scene} scene at ${level} level. I've earned ${xp} XP and practiced ${phrasesUsed} phrases. Give me:
-
-1. Key phrases I learned today
-2. Grammar points covered
-3. Cultural tips for this situation
-4. What I should practice next
-5. Confidence boosters - what I'm doing well!
-
-Make it encouraging and specific to my progress in the ${scene} scenario.`;
-
-  // Just put in input and send normally
-  input.value = "";
-  input.value = reviewPrompt;
-  send();
-});
-
-// Test Me Button  
-document.getElementById("testBtn").addEventListener("click", async () => {
-  const scene = sceneSel.value;
-  const level = levelSel.value;
-  const conversationCount = history.length;
-  
-  const testPrompt = `Test me on everything I've learned! Create a fun quiz based on our conversation and the ${scene} scene at ${level} level. 
-
-Please give me:
-1. 3-5 Hindi phrases to translate to English
-2. 2-3 English situations where I need to respond in Hindi
-3. 1-2 cultural etiquette questions
-4. A role-play scenario to practice
-
-Make it challenging but encouraging. We've had ${conversationCount} messages in our conversation, so base the test on what we've actually covered. Give me one question at a time and wait for my answer before the next one!`;
-
-  // Just put in input and send normally
-  input.value = "";
-  input.value = testPrompt;
-  send();
-});
-
 // Toast notifications
 let toastTimer;
 function toast(msg) {
@@ -958,6 +913,46 @@ window.addEventListener("load", () => {
   MISSIONS.render();
   GAMIFY.checkBadges();
   loadPhrases();
+  
+  // Add event listeners for action buttons
+  document.getElementById("summarizeBtn").addEventListener("click", () => {
+    const scene = sceneSel.value;
+    const level = levelSel.value;
+    const xp = GAMIFY.state?.xp || 0;
+    const phrasesUsed = GAMIFY.state?.phrasesTapped || 0;
+    
+    const reviewPrompt = `Please review today's Hindi lesson for the ${scene} scene at ${level} level. I've earned ${xp} XP and practiced ${phrasesUsed} phrases. Give me:
+
+1. Key phrases I learned today
+2. Grammar points covered
+3. Cultural tips for this situation
+4. What I should practice next
+5. Confidence boosters - what I'm doing well!
+
+Make it encouraging and specific to my progress in the ${scene} scenario.`;
+
+    input.value = reviewPrompt;
+    send();
+  });
+
+  document.getElementById("testBtn").addEventListener("click", () => {
+    const scene = sceneSel.value;
+    const level = levelSel.value;
+    const conversationCount = history.length;
+    
+    const testPrompt = `Test me on everything I've learned! Create a fun quiz based on our conversation and the ${scene} scene at ${level} level. 
+
+Please give me:
+1. 3-5 Hindi phrases to translate to English
+2. 2-3 English situations where I need to respond in Hindi
+3. 1-2 cultural etiquette questions
+4. A role-play scenario to practice
+
+Make it challenging but encouraging. We've had ${conversationCount} messages in our conversation, so base the test on what we've actually covered. Give me one question at a time and wait for my answer before the next one!`;
+
+    input.value = testPrompt;
+    send();
+  });
   
   // Welcome message
   setTimeout(() => {
