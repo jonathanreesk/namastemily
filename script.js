@@ -362,6 +362,106 @@ function webSpeechDictation() {
     console.log("Speech recognition error:", e);
     toast("Couldn't catch that. Try speaking a bit louder! 🔊");
   };
+  
+  recog.onend = () => {
+    micBtn.classList.remove('loading');
+    micBtn.textContent = "🎤";
+  };
+  
+  recog.start();
+}
+
+// ===== PHRASES SYSTEM =====
+const phrasesBar = document.getElementById("phrasesBar");
+
+// Static phrase packs
+const phrasePacks = {
+  market: [
+    { hi: "यह कितने का है?", tr: "Yah kitne ka hai?", en: "How much is this?" },
+    { hi: "बहुत महंगा है", tr: "Bahut mahanga hai", en: "It's very expensive" },
+    { hi: "कम कर दो", tr: "Kam kar do", en: "Please reduce the price" },
+    { hi: "ठीक है", tr: "Theek hai", en: "Okay/Alright" },
+    { hi: "धन्यवाद", tr: "Dhanyavaad", en: "Thank you" }
+  ],
+  taxi: [
+    { hi: "मुझे जाना है", tr: "Mujhe jaana hai", en: "I need to go" },
+    { hi: "कितना पैसा लगेगा?", tr: "Kitna paisa lagega?", en: "How much will it cost?" },
+    { hi: "जल्दी चलिए", tr: "Jaldi chaliye", en: "Please go quickly" },
+    { hi: "यहाँ रुकिए", tr: "Yahan rukiye", en: "Please stop here" },
+    { hi: "बहुत धन्यवाद", tr: "Bahut dhanyavaad", en: "Thank you very much" }
+  ],
+  rickshaw: [
+    { hi: "रिक्शा मिलेगा?", tr: "Ricksha milega?", en: "Can I get a rickshaw?" },
+    { hi: "कितना लोगे?", tr: "Kitna loge?", en: "How much will you take?" },
+    { hi: "बहुत ज्यादा है", tr: "Bahut zyada hai", en: "It's too much" },
+    { hi: "आधा करो", tr: "Aadha karo", en: "Make it half" },
+    { hi: "चलो ठीक है", tr: "Chalo theek hai", en: "Okay, let's go" }
+  ],
+  neighbor: [
+    { hi: "नमस्ते", tr: "Namaste", en: "Hello/Greetings" },
+    { hi: "आप कैसे हैं?", tr: "Aap kaise hain?", en: "How are you?" },
+    { hi: "मैं ठीक हूँ", tr: "Main theek hun", en: "I am fine" },
+    { hi: "आपका नाम क्या है?", tr: "Aapka naam kya hai?", en: "What is your name?" },
+    { hi: "मिलकर खुशी हुई", tr: "Milkar khushi hui", en: "Nice to meet you" }
+  ],
+  introductions: [
+    { hi: "मेरा नाम एमिली है", tr: "Mera naam Emily hai", en: "My name is Emily" },
+    { hi: "यह मेरे पति जोनाथन हैं", tr: "Yah mere pati Jonathan hain", en: "This is my husband Jonathan" },
+    { hi: "यह मेरी बेटी सोफिया है", tr: "Yah meri beti Sophia hai", en: "This is my daughter Sophia" },
+    { hi: "हम अमेरिका से हैं", tr: "Hum America se hain", en: "We are from America" },
+    { hi: "हम यहाँ नए हैं", tr: "Hum yahan naye hain", en: "We are new here" }
+  ],
+  church: [
+    { hi: "नमस्कार", tr: "Namaskar", en: "Respectful greeting" },
+    { hi: "प्रार्थना कब है?", tr: "Prarthana kab hai?", en: "When is the prayer?" },
+    { hi: "धन्यवाद", tr: "Dhanyavaad", en: "Thank you" },
+    { hi: "आशीर्वाद दीजिए", tr: "Aashirvaad dijiye", en: "Please give your blessings" },
+    { hi: "जय हो", tr: "Jai ho", en: "Victory/Praise be" }
+  ]
+};
+
+// AI-generated phrases (loaded dynamically)
+let aiPhrasesLoaded = {};
+
+async function loadStaticPhrases() {
+  // Static phrases are already loaded in phrasePacks
+  console.log("Static phrases loaded for all scenes");
+}
+
+async function loadMorePhrases(scene) {
+  if (aiPhrasesLoaded[scene]) {
+    console.log(`AI phrases already loaded for ${scene}`);
+    renderPhrases();
+    return;
+  }
+  
+  try {
+    toast("🤖 Loading personalized phrases...");
+    
+    const resp = await fetch(`/.netlify/functions/phrases`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scene, level: levelSel.value })
+    });
+    
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}`);
+    }
+    
+    const data = await resp.json();
+    aiPhrasesLoaded[scene] = data.phrases || [];
+    
+    renderPhrases();
+    toast("✨ Personalized phrases loaded!");
+    
+  } catch (e) {
+    console.error('Load phrases error:', e);
+    toast("❌ Could not load AI phrases. Using static phrases.");
+  }
+}
+
+async function loadPhrases() {
+  try {
     // Only load static phrases initially
     await loadStaticPhrases();
     renderPhrases();
@@ -376,6 +476,8 @@ function renderPhrases() {
   const aiPack = aiPhrasesLoaded[scene] || [];
   const pack = aiPack.length > 0 ? aiPack : staticPack;
   
+  phrasesBar.innerHTML = "";
+  
   if (pack.length === 0) {
     phrasesBar.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No phrases available for this scene yet 📝</p>';
     return;
@@ -383,10 +485,13 @@ function renderPhrases() {
   
   pack.forEach(p => {
     const b = document.createElement("button");
+    b.className = "phrase-btn";
     // Use transliteration for display
     // Prioritize transliteration display for readability
     const displayText = p.displayText || p.pronunciation || p.tr || p.englishMeaning || p.en;
     const tooltip = `${p.englishMeaning || p.en} ${p.culturalNote ? '• ' + p.culturalNote : ''}`;
+    b.textContent = displayText;
+    b.title = tooltip;
     b.style.cursor = "pointer";
     b.setAttribute("ontouchstart", ""); // Enable :active on iOS
     b.addEventListener("click", () => {
@@ -407,6 +512,23 @@ function renderPhrases() {
     });
     phrasesBar.appendChild(b);
   });
+  
+  // Add More Phrases button if AI phrases aren't loaded yet
+  if (aiPack.length === 0 && staticPack.length > 0) {
+    const moreBtn = document.createElement("button");
+    moreBtn.className = "more-phrases-btn";
+    moreBtn.innerHTML = '<span>🤖</span><span>More Phrases</span>';
+    moreBtn.onclick = () => loadMorePhrases(scene);
+    phrasesBar.appendChild(moreBtn);
+  }
+  
+  // Show AI indicator if AI phrases are loaded
+  if (aiPack.length > 0) {
+    const indicator = document.createElement("div");
+    indicator.className = "ai-indicator";
+    indicator.innerHTML = '<span>🤖</span><span>AI Personalized</span>';
+    phrasesBar.appendChild(indicator);
+  }
 }
 
 sceneSel.addEventListener("change", () => {
@@ -494,9 +616,6 @@ const GAMIFY = {
   
   awardChai(n) { 
     this.state.chai += n; 
-  }
-  )
-}
     this.updateHUD(); 
     this.save(this.state); 
   },
@@ -687,26 +806,11 @@ window.addEventListener("load", () => {
     };
     
     // Load voices immediately and on change
-    phrasesBar.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 20px;">No phrases available for this scene 📝</p>';
+    loadVoices();
+    speechSynthesis.onvoiceschanged = loadVoices;
   }
   
-  // Add More Phrases button if AI phrases aren't loaded yet
-  if (aiPack.length === 0 && staticPack.length > 0) {
-    const moreBtn = document.createElement("button");
-    moreBtn.className = "more-phrases-btn";
-    moreBtn.innerHTML = '<span>🤖</span><span>More Phrases</span>';
-    moreBtn.onclick = () => loadMorePhrases(scene);
-    phrasesBar.appendChild(moreBtn);
-  }
-  
-  // Show AI indicator if AI phrases are loaded
-  if (aiPack.length > 0) {
-    const indicator = document.createElement("div");
-    indicator.className = "ai-indicator";
-    indicator.innerHTML = '<span>🤖</span><span>AI Personalized</span>';
-    phrasesBar.appendChild(indicator);
-  }
-  
+  GAMIFY.init();
   MISSIONS.render();
   GAMIFY.checkBadges();
   
