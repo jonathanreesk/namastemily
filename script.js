@@ -354,7 +354,7 @@ async function send() {
     
   } catch (e) {
     console.error('Send error:', e);
-    addMsg("assistant", "Sorry, I'm having trouble connecting to the AI service right now. Please make sure your OpenAI API key is configured in Netlify environment variables. The speech features should still work with your browser's built-in voice. 🔧");
+    addMsg("assistant", "I need an OpenAI API key to chat with you! 🔧\n\nTo fix this:\n1. Go to your Netlify site dashboard\n2. Click 'Site settings' → 'Environment variables'\n3. Add OPENAI_API_KEY with your OpenAI API key\n4. Redeploy the site\n\nThe speech features still work with your browser's voice! Try clicking the 🔊 buttons.");
   } finally {
     sendBtn.classList.remove('loading');
     sendBtn.disabled = false;

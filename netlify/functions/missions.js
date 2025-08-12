@@ -27,12 +27,21 @@ exports.handler = async (event, context) => {
   try {
     const { type, userProgress = {} } = JSON.parse(event.body || '{}');
     
+    // Debug environment variables
+    console.log('Missions environment check:', {
+      hasOpenAI: !!process.env.OPENAI_API_KEY,
+      openAIPreview: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 20) + '...' : 'undefined'
+    });
+
     if (!process.env.OPENAI_API_KEY) {
+      console.error('Missing OpenAI API key in missions');
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
-          error: "OpenAI API key not configured. Please set OPENAI_API_KEY in Netlify environment variables." 
+          error: "Missing OpenAI API key",
+          debug: "Please set OPENAI_API_KEY in Netlify environment variables",
+          instructions: "Go to Site settings → Environment variables in Netlify dashboard"
         })
       };
     }
