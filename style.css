@@ -282,15 +282,48 @@ header {
   color: var(--primary-700);
 }
 
+/* More Phrases Button */
+.more-phrases-btn {
+  background: linear-gradient(135deg, var(--secondary-500), var(--secondary-600));
+  color: white;
+  border: 2px solid var(--secondary-600);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-base);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.more-phrases-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--secondary-600), var(--secondary-700));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.more-phrases-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* AI Indicator */
 .ai-indicator {
-  width: 100%;
-  text-align: center;
-  margin-bottom: var(--space-3);
-  padding: var(--space-2);
-  background: var(--secondary-50);
-  border: 1px solid var(--secondary-200);
+  background: var(--warning-50);
+  color: var(--warning-700);
+  border: 2px solid var(--warning-600);
   border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  animation: bounceIn 0.5s ease-out;
 }
 
 /* Chat */
