@@ -1,4 +1,5 @@
 exports.handler = async (event, context) => {
+}
 const { OpenAI } = require('openai');
 
 exports.handler = async (event, context) => {
