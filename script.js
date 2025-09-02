@@ -93,14 +93,38 @@ function addMsg(role, content) {
     div.innerHTML = `
       <div class="msg-header">
         <strong>${prefix.split(':')[0]}:</strong>
-        <button class="listen-btn" data-original-text="${content.replace(/'/g, "\\'").replace(/"/g, '\\"')}" 
-                onclick="speak('${content.replace(/'/g, "\\'").replace(/"/g, '\\"')}'); event.stopPropagation();" 
-                ontouchstart="" style="cursor: pointer;">
-          <span>🔊</span>
-        </button>
+        <div class="audio-controls">
+          <select class="speed-select" onchange="updateAudioSpeed(this.value)">
+            <option value="0.75">0.75x</option>
+            <option value="1" selected>1x</option>
+            <option value="1.25">1.25x</option>
+            <option value="1.5">1.5x</option>
+          </select>
+          <button class="listen-btn play-btn" data-text="${content.replace(/'/g, "\\'").replace(/"/g, '\\"')}" 
+                  style="cursor: pointer;">
+            <span>🔊</span>
+          </button>
+          <button class="listen-btn stop-btn" style="cursor: pointer; display: none;">
+            <span>⏹️</span>
+          </button>
+        </div>
       </div>
       <div class="msg-content">${content}</div>
     `;
+    
+    // Add event listeners after creating the element
+    const playBtn = div.querySelector('.play-btn');
+    const stopBtn = div.querySelector('.stop-btn');
+    
+    playBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handlePlayClick(playBtn, stopBtn, content);
+    });
+    
+    stopBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleStopClick(playBtn, stopBtn);
+    });
   } else {
     div.innerHTML = `<strong>${prefix.split(':')[0]}:</strong> ${content}`;
   }
